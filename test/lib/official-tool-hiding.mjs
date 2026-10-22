@@ -190,6 +190,81 @@ export async function officialToolHidingMountChecks() {
       await assemble(ctx, agent)
     } finally { await shutdown(ctx) }
   })
+  await test('PTC-only assembly preserves selected official SDK tools and nested dispatch without Native counterparts', async () => {
+    const { ctx } = await bootHost()
+    try {
+      ctx.provide('ptcRuntime', { language: 'typescript' })
+      for (const name of ['read', 'glob', 'grep']) ctx.tools.register(tool(name))
+      await mount(ctx)
+      const agent = await mint(ctx, 'collapsed-replacements')
+      const lift = agent.ctx.tools.presentAs('ptc')
+      const assembly = await assemble(ctx, agent)
+      assert.deepEqual(assembly.tools.map(schema => schema.name), ['run_code'])
+      for (const name of ['read', 'glob', 'grep']) {
+        assert.match(assembly.sections.find(section => section.name === 'tools:sdk').text, new RegExp(name + ':'))
+        const result = await ctx.tools.execute({ agent, name, arguments: {}, callId: 'nested-' + name,
+          parent: 'fixture-transport-token', signal: new AbortController().signal })
+        assert.equal(result.isError, false, JSON.stringify(result))
+        assert.equal(result.value, 'ran:' + name)
+      }
+      // Registry changes must not permanently restore the Native-only gate in PTC.
+      ctx.tools.register(tool('foreign'))
+      await assemble(ctx, agent)
+      lift()
+      await assert.rejects(() => assemble(ctx, agent), /READINESS_BLOCKED/)
+      assert.equal((await execute(ctx, agent, 'read')).isError, true)
+      const mixed = agent.ctx.tools.presentAs('both')
+      await assert.rejects(() => assemble(ctx, agent), /READINESS_BLOCKED/)
+      mixed()
+    } finally { await shutdown(ctx) }
+  })
+  await test('Native-to-PTC transition restores SDK declarations when selected OPS counterparts remain registered', async () => {
+    const { ctx } = await bootHost()
+    try {
+      await replacements(ctx)
+      ctx.provide('ptcRuntime', { language: 'typescript' })
+      for (const name of ['read', 'glob', 'grep']) ctx.tools.register(tool(name))
+      await mount(ctx)
+      const agent = await mint(ctx, 'ptc-with-native-providers')
+      await assemble(ctx, agent)
+      const lift = agent.ctx.tools.presentAs('ptc')
+      const result = await assemble(ctx, agent)
+      assert.deepEqual(result.tools.map(schema => schema.name), ['run_code'])
+      const sdk = result.sections.find(section => section.name === 'tools:sdk').text
+      for (const name of ['read', 'glob', 'grep']) assert.match(sdk, new RegExp('\\b' + name + ':'))
+      lift()
+      assert.equal((await assemble(ctx, agent)).tools.some(schema => schema.name === 'read'), false)
+    } finally { await shutdown(ctx) }
+  })
+  await test('PTC exemption never bypasses failed restriction cleanup', async () => {
+    const { ctx } = await bootHost({ withTools: false })
+    try {
+      // Host API failure fixture: the mask cannot be lifted, even in PTC.
+      const owned = tool(publicToolName('inspect_local_file'))
+      let masked = false, ptc = false, cleanupFails = true
+      ctx.provide('tools', {
+        schemas: () => [owned, ...masked ? [] : [tool('read')]],
+        get: name => name === owned.name ? owned : undefined,
+        guard: () => () => {},
+        restrict: () => { masked = true; return () => {
+          if (cleanupFails) throw new Error('fixture cleanup failed')
+          masked = false
+        } },
+      })
+      await registerNativeProvider(ctx, [owned], () => () => {})
+      ctx.systemPrompt.tools(() => ({ schemas: ptc ? [tool('run_code')] : ctx.tools.schemas() }))
+      await mount(ctx, { replaceTools: ['read'] })
+      const agent = await mint(ctx, 'cleanup-in-ptc')
+      assert.equal(masked, true)
+      ptc = true
+      await assert.rejects(() => assemble(ctx, agent), /restriction cleanup failed/)
+      const decision = await ctx.waterfall('tools/pre-execute', { agent, name: 'read' }, () => ({ kind: 'allow' }))
+      assert.equal(decision.kind, 'deny')
+      cleanupFails = false
+      assert.deepEqual((await assemble(ctx, agent)).tools.map(schema => schema.name), ['run_code'])
+      assert.equal(masked, false)
+    } finally { await shutdown(ctx) }
+  })
   await test('legacy blanket selections deactivate without guessing replacements or warning', async () => {
     for (const scope of ['takeover', 'extended', 'off']) {
       const { ctx } = await bootHost()

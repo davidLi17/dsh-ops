@@ -14,6 +14,7 @@ import { resolveWorker } from './ptc/runtime.js'
 import { mountWorkspacePreparation } from './workspace-preparation.js'
 import { safeDispose, safeDisposeAll } from './teardown.js'
 import { mountResultLifecycle } from './kernel/result-lifecycle.js'
+import { visibleToolNames } from './tool-visibility.js'
 
 export { Config } from './settings/file-config.js'
 export const name = 'dsh-ops'
@@ -29,10 +30,9 @@ function report(ctx: Context, message: string, level = 'error'): void {
   else if (level === 'warn') console.warn(message)
   else console.error(message)
 }
-function visibleTools(ctx: Context, agent?: Agent): string[] {
+function visibleTools(ctx: Context, names: Iterable<string>, agent?: Agent): string[] {
   try {
-    return (ctx.get('tools')?.schemas(agent) ?? []).map(schema => schema.name)
-      .filter(tool => typeof tool === 'string')
+    return visibleToolNames(ctx.get('tools'), names, agent)
   } catch { return [] }
 }
 
@@ -44,7 +44,7 @@ function installHostShellDenial(ctx: Context, config: ResolvedConfig): void {
   const hide = (agent: Agent) => {
     if (lifts.has(agent) || !agent?.ctx) return
     try {
-      const names = (ctx.tools.schemas(agent) ?? []).map(tool => tool.name).filter(name => denied.has(name))
+      const names = visibleToolNames(ctx.tools, denied, agent)
       if (names.length) lifts.set(agent, agent.ctx.tools.restrict({ deny: names }))
     } catch (error) {
       if (!warned) {
@@ -114,7 +114,7 @@ export function applyComponent(root: Context, rawConfig: unknown, component: Com
       order: SECTION_ORDERS[TOOLING_SECTION] + (component === 'shell' ? 1 : 0),
       interpolate: false,
       text: context => renderToolingPolicy({
-        published: visibleTools(ctx, context.agent).filter(name => owned.includes(name)),
+        published: visibleTools(ctx, owned, context.agent),
         shellComponent: component === 'shell',
         extraGuidance: config.extraGuidance,
       }),

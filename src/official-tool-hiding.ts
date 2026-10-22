@@ -12,8 +12,9 @@ export { resolveHidingConfig } from './config.js'
 import { OFFICIAL_REPLACEMENTS } from './official-tool-catalog.js'
 import { safeDispose } from './teardown.js'
 
-interface Entry { context: Context; lifts: (() => void)[]; cleanupError?: string; error?: string; reported?: string }
+interface Entry { context: Context; lifts: (() => void)[]; cleanupError?: string; collapsed?: boolean; error?: string; reported?: string }
 interface Plan { deny: string[]; failure?: string }
+const collapsed = (names: string[]): boolean => names.length > 0 && names.every(name => name === 'run_code')
 const message = (error: unknown): string => error instanceof Error ? error.message : String(error)
 
 export const name = 'dsh-ops-hide-official'
@@ -53,9 +54,9 @@ export function apply(root: Context, raw?: unknown): void {
     }
     const prepare = (agent: object, entry: Entry): Plan => {
       const names = typeof tools.schemas === 'function' ? tools.schemas(agent).map(schema => schema.name) : []
-      const hidden = names.filter(hideable)
+      const hidden = entry.collapsed ? [] : names.filter(hideable)
       const ready = readiness(agent)
-      const missing = replaceTools.flatMap((tool, index) => {
+      const missing = entry.collapsed ? [] : replaceTools.flatMap((tool, index) => {
         const replacement = OFFICIAL_REPLACEMENTS[tool]
         return names.includes(replacement) && ready[index]
           ? [] : [`${tool} -> ${replacement}`]
@@ -97,7 +98,7 @@ export function apply(root: Context, raw?: unknown): void {
             // One restriction per complete plan; never partially hide when a
             // single required replacement is absent.
             if (plan.deny.length) entry.lifts.push(entry.context.tools.restrict({ deny: plan.deny }))
-            const leaked = tools.schemas(agent).map(schema => schema.name).filter(hideable)
+            const leaked = entry.collapsed ? [] : tools.schemas(agent).map(schema => schema.name).filter(hideable)
             if (leaked.length) throw new Error(`host scoped restriction cannot hide own-scope tools: ${leaked.join(', ')}`)
             entry.error = undefined
           } catch (error) { clear(entry); entry.error = blocked(message(error)) }
@@ -131,8 +132,9 @@ export function apply(root: Context, raw?: unknown): void {
       if (!exec?.agent?.ctx) return blocked('calling agent scope unavailable')
       attach(exec.agent)
       reconcile() // Authority is live, not a startup snapshot.
-      return entries.get(exec.agent)?.error
-        ?? (hideable(exec.name) ? blocked(`official tool ${exec.name} is selected for replacement`) : undefined)
+      const entry = entries.get(exec.agent)
+      return entry?.error
+        ?? (!entry?.collapsed && hideable(exec.name) ? blocked(`official tool ${exec.name} is selected for replacement`) : undefined)
     }
     ctx.on('tools/pre-execute', async (exec, next) => {
       const reason = refusal(exec)
@@ -144,17 +146,32 @@ export function apply(root: Context, raw?: unknown): void {
       // discovery publishes a selected replacement. Provider requests stay guarded.
       if (!context.scope || isPresentationProbe(context)) return next()
       attach(context.scope)
-      reconcile()
       const entry = entries.get(context.scope)
-      const error = entry ? entry.error : blocked('agent scope cannot be verified')
-      if (error) throw new Error(error)
-      let result
-      try { result = await next() }
-      catch (error) { throw block(context.scope, `agent prompt assembly could not be verified: ${message(error)}`) }
+      if (!entry) throw new Error(blocked('agent scope cannot be verified'))
+      // The registry is presentation-agnostic. Only the assembled wire surface
+      // can establish that selected tools are SDK calls, not Native duplicates.
+      const wasMasked = entry.lifts.length > 0
+      const ptcOnly = Array.isArray(assembly.tools) && collapsed(assembly.tools.map(schema => schema.name))
+      if (Boolean(entry.collapsed) !== ptcOnly) {
+        entry.collapsed = ptcOnly
+        lastSurface = undefined
+      }
+      if (entry.cleanupError) lastSurface = undefined
       reconcile()
-      if (entry?.error) throw new Error(entry.error)
+      // Providers collected SDK declarations before this hook. If a Native mask
+      // was lifted, collect once more so the first PTC prompt includes those tools.
+      let result
+      try { result = ptcOnly && wasMasked && !entry.error ? await ctx.systemPrompt.assemble(context) : await next() }
+      catch (error) { throw block(context.scope, `agent prompt assembly could not be verified: ${message(error)}`) }
       if (!Array.isArray(result?.tools)) throw block(context.scope, 'assembled tool schemas unavailable')
-      const leaked = result.tools.map(schema => schema.name).filter(hideable)
+      const names = result.tools.map(schema => schema.name)
+      if (entry.collapsed !== collapsed(names)) {
+        entry.collapsed = collapsed(names)
+        lastSurface = undefined
+      }
+      reconcile()
+      if (entry.error) throw new Error(entry.error)
+      const leaked = entry.collapsed ? [] : names.filter(hideable)
       if (leaked.length) throw block(context.scope, `assembled surface still contains hidden official tools: ${leaked.join(', ')}`)
       return result
     })
@@ -166,7 +183,15 @@ export function apply(root: Context, raw?: unknown): void {
       try { clear(entry); entries.delete(agent) } finally { mutating = false }
       reconcile()
     })
-    ctx.on('tools/change', reconcile)
+    ctx.on('tools/change', () => {
+      if (stopped || mutating) return
+      // Presentation changes also emit this event. Never carry a PTC exemption
+      // into a Native/both request; the next assembly verifies it anew.
+      for (const entry of entries.values()) {
+        if (entry.collapsed) { entry.collapsed = false; lastSurface = undefined }
+      }
+      reconcile()
+    })
     ctx.effect(() => () => {
       stopped = true; mutating = true
       for (const entry of entries.values()) clear(entry)
