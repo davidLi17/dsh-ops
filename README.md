@@ -22,7 +22,8 @@
 
 以提高token效率为目的，提供新增的ops系列工具并隐藏部分官方工具为方案的插件，低改动面，低侵入性，与其他插件广泛兼容。
 
-- （仅windows平台）启用与dsh原生bash行为一致的ops_bash，并可选禁用powershell
+- （仅 Windows）启用与 dsh 原生 bash 行为一致的 ops_bash；启用模式行时用它替换官方 pwsh，兼容模式则保留官方工具
+- 四个预设模式行分别增强内置 Minimal/Standard/PTC/Cordis preset：Standard 与 Cordis 替换官方 read/glob/grep，PTC 提供类型化 SDK，Minimal 只替换 Windows shell；discovery 行启用时其会话始终获得动态加载入口；兼容模式（默认关闭）可保留全部官方工具
 - 启用 DSH 预留的 `tools_addition` 动态工具加载，并提供渐进式纰漏的工具，作为高级功能（如pdf、word读取、超多文件批量修改）的加载平台，大大减少常见特定场景的token消耗量，且不会导致系统提示词膨胀
 - 为 Native 模式提供返回紧凑、带行号和更好错误回馈的工具以遏制报错循环，减少调用轮次
 - 为 PTC 模式提供一些返回结构化 JSON 值的工具以降低 ai 在 ptc 模式下编写 TypeScript 代码的token总量和心智负担
@@ -75,6 +76,10 @@ dsh plugin --profile dsh-tui add dsh-ops
 
 #### 更新方法
 
+宿主兼容范围明确声明为 DSH **0.2.0-rc.2 与 0.2.1-rc.2**。
+组件图标导出、profile 刷新及配置/schema 检查见
+[宿主兼容范围与展示元数据](docs/使用指南.md#宿主兼容范围与展示元数据)。
+
 重新运行相同的 `npx --yes dsh-ops@latest install --profile ...`，或用官方 CLI `add dsh-ops@latest`。按应用提示重载；替换已加载代码时重启应用。
 
 #### 卸载与查看状态
@@ -87,6 +92,8 @@ npx --yes dsh-ops@latest uninstall --profile desktop
 把 `desktop` 换成 `web` 或 `tui` 即可。也可在市场卸载，或执行官方 `dsh plugin --profile ... remove dsh-ops`。插件依赖（含 Windows bash 可选载荷）随 profile 管理；单独 provision 的 Bash 用 `dsh-ops bash-runtime remove --yes` 移除，不误删系统 shell、其它 profile 的副本或包管理器共享缓存。
 
 旧版显式 provision 的 `<DSH_HOME>/dsh-ops/` 文件（provision 的 shell，以及早期版本可 provision 的 FastCtx 运行时）需单独清理：`npx --yes dsh-ops@latest uninstall --yes`。已移除的后台组件留下的 `~/.fastctx/` 状态默认不删；需要时显式加 `--purge-fastctx`。
+
+组件 bundle 现为八行：`mode-minimal`、`mode-standard`、`mode-ptc`、`mode-cordis`、`discovery`、`compat`、`panel`、`tui`。旧的 `shell`、`file`、`ptc`、`hide-official` 行已移除，请删除为它们保存的 profile 覆盖，并按需重设模式开关。
 
 原 `dsh-ops/background` 组件（FastCtx 后台任务）已移除。仍保留该行的 profile 照常加载：该行不发布任何工具，只记录一条警告，可直接删除。
 
@@ -102,13 +109,13 @@ npx --yes dsh-ops@latest uninstall --profile desktop
 
 ## 许可证
 
-插件源码分发采用 **`MIT AND Apache-2.0`**：`licenses/fastctx/` 之外为 MIT；FastCtx 为 Apache-2.0。见 [NOTICE](NOTICE)、`licenses/fastctx/LICENSE-APACHE` 与 `licenses/fastctx/NOTICE`。
+当前 `dsh-ops` 源码以 **MIT** 许可分发，见 [LICENSE](LICENSE)。`0.3.2` 之前的版本曾内置以 Apache-2.0 许可的 FastCtx 源码；该源码随后台组件一并移除，当前发行版不再包含任何 FastCtx 代码或二进制。FastCtx 的许可文本与上游声明保留在 `licenses/fastctx/`，历史归属见 [NOTICE](NOTICE)。
 
 独立的 Windows bash 载荷包（npm 可选依赖 `@dsh-ops/bash-win32-x64`）另按上游组件许可证分发：Git for Windows 包含 GPL-2.0 等许可组件，其原始许可证、声明及来源记录随载荷保留；PowerShell 由宿主管理，按其 MIT 与第三方组件许可分发。插件的 MIT 许可不替代这些许可。详见 [PROVENANCE.md](docs/PROVENANCE.md)。
 
 ## 致谢
 
-Rust 工具基于 [yc-duan](https://github.com/yc-duan) 的 Codex 插件 FastCtx 并使用其源代码。vendor 标识与删除型分发改动曾记在 `vendor/fastctx/FORK.md` 和 `vendor/fastctx/UPSTREAM.md`，它们保留在仓库历史和早期发布版本中；vendored 源码本身已随后台组件一并移除。需要转载的 FastCtx 声明如下：
+早期版本（`0.3.2` 之前）曾内置并分发 [yc-duan](https://github.com/yc-duan) 的 Codex 插件 FastCtx，并使用其源代码提供 Rust 工具面。FastCtx 源码随后台组件一并移除，当前 `native/` 的 Rust 核心为 dsh-ops 原创的 MIT 代码；FastCtx 的许可文本与需要转载的声明仍保留在 `licenses/fastctx/` 与 [NOTICE](NOTICE) 中，作为对历史版本的归属：
 
 > This product includes FastCtx
 > (https://github.com/yc-duan/fastctx), Copyright (c) 2026 yc-duan,

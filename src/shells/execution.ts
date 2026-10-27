@@ -1,6 +1,6 @@
 /** Live Bash command over the host subprocess service; no service registration. */
 import { Buffer } from 'node:buffer'
-import type { SubprocessHandle, SubprocessOutputReader, SubprocessOutputRead } from '@deepseek-ai/dsh-subprocess'
+import type { SubprocessHandle, SubprocessOutputReader, SubprocessOutputRead } from '../adapter/dsh/types.js'
 import type { ShellExecutorOptions, ShellExecutionSpec, ShellCall, ShellExecution, ShellResult, ShellStream } from './types.js'
 import { DEFAULT_MAX_OUTPUT_BYTES, DEFAULT_MAX_SPILL_BYTES, shellEnvOverrides } from './constants.js'
 import { formatBashSpawnError } from './spawn-error.js'
@@ -88,7 +88,8 @@ export function startBashExecution({ file, source, subprocess, prepareArgv, env 
         // Legacy direct executor callers can omit cwd; scoped host calls resolve it before this seam.
         cwd: spec.workdir!,
         stdio: {
-          stdin: 'ignore',
+          // A closed pipe supplies EOF without exposing Windows NUL to MSYS as a device.
+          stdin: { data: '' },
           stdout: { maxBytes: DEFAULT_MAX_OUTPUT_BYTES, spill: { maxBytes: DEFAULT_MAX_SPILL_BYTES } },
           stderr: { maxBytes: DEFAULT_MAX_OUTPUT_BYTES, spill: { maxBytes: DEFAULT_MAX_SPILL_BYTES } },
         },

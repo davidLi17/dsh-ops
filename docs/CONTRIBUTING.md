@@ -114,22 +114,24 @@ What a skip means locally:
   `test/run.mjs` (every `test/*.test.mjs`
   in its own process with its own temporary `DSH_HOME`).
 - `node scripts/verify-gate.mjs --skip-install` — **the release gate**, exactly what
-  `.github/workflows/ci.yml` runs on Windows x64, Linux x64 and macOS arm64: worker unit tests, build
+  `.github/workflows/ci.yml` runs on Windows x64, Linux x64, macOS arm64 and macOS Intel x64: worker unit tests, build
   and stage, manifest floor, every suite, the allowed-skip set, the suite inventory on disk, and the
   packed artifact.
 - `node test/run.mjs <filter>` runs only the suites whose file names contain `<filter>`, e.g.
   `node test/run.mjs mount file-operations`.
 
 How to read the gate and the expected numbers per host: [verify-locally.md](verify-locally.md).
-CI runs on every pull request and every push to `main`, `0.3.2` and `release/0.4.0`. The two POSIX legs (`validate-posix`: Linux x64, macOS arm64) block a merge; the Windows x64 leg (`validate-windows`) still runs on every event but is non-blocking — a red Windows run is a defect to fix, not a reason to hold the merge (#316).
+CI runs on every pull request and every push to `main`, `0.3.2` and `release/0.4.0`. The two blocking POSIX legs (`validate-posix`: Linux x64, macOS arm64) block a merge. The Windows x64 leg (`validate-windows`) and the macOS Intel leg (`validate-macos-intel`) still run on every event but are non-blocking — a red run there is a defect to fix, not a reason to hold the merge (#316; the Intel leg measured 318 s).
 
 ## One CI run per pull request
 
+All target branches are covered, including stacked feature branches. Repository enforcement requires the separate [administrator ruleset and acceptance steps](required-ci-admin.md); passing CI alone does not configure branch protection.
+
 Every pull request must show one run of the [Cross-platform validation](https://github.com/T-Auto/dsh-ops/blob/main/.github/workflows/ci.yml)
 workflow that its **own `pull_request` event** triggered. The aggregate job **`CI required`**
-summarises the two blocking POSIX legs (Linux x64, macOS arm64); the non-blocking Windows x64 leg
-runs alongside it and is deliberately not waited on. That job's run URL is what the pull request
-template asks for.
+summarises the two blocking POSIX legs (Linux x64, macOS arm64); the non-blocking Windows x64 and
+macOS Intel legs run alongside it and are deliberately not waited on. That job's run URL is what the
+pull request template asks for.
 
 - **What triggers it.** `ci.yml` runs on `pull_request` targeting `main`, `0.3.2` and
   `release/0.4.0` (and on `push` to the same branches, plus `merge_group`). GitHub reads the
@@ -225,8 +227,9 @@ catalogue, retry rules and positive/negative TypeScript contracts. Node declarat
 
 ## License and attribution
 
-Everything outside `licenses/fastctx/` is MIT; FastCtx is Apache-2.0. The upstream acknowledgement
-reproduced in `NOTICE` and the READMEs **must stay verbatim** — do not "polish" it.
+Current releases are MIT-licensed. FastCtx was removed in 0.3.2; the releases that shipped it were
+`MIT AND Apache-2.0`. FastCtx's Apache-2.0 text, upstream notice and the acknowledgement reproduced
+in `NOTICE` remain for those releases **and must stay verbatim** — do not "polish" it.
 
 Native build and acceptance details: [native-ptc.md](native-ptc.md) and
 [manual-validation.md](manual-validation.md).

@@ -1,5 +1,5 @@
-import type { Context } from '@deepseek-ai/cordis'
-import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
+import type { Context } from '../adapter/dsh/types.js'
+import type { ToolDefinition } from '../adapter/dsh/types.js'
 import type { FileToolName } from '../capabilities/registry.js'
 import { WORKER_TIMEOUT_MS } from '../worker-protocol.js'
 import { publicToolName } from '../policy.js'
@@ -43,7 +43,9 @@ export class NativeFileTools {
       return []
     }
     const definitions = names.map(rawName => this.definition(rawName))
-    this.unregisterProvider = await registerNativeProvider(this.ctx, definitions, tool => this.ctx.tools.register(tool))
+    // Discovery starts a worker without a resident surface. Do not emit a
+    // registry change for an empty provider on every newly attached agent.
+    if (definitions.length) this.unregisterProvider = await registerNativeProvider(this.ctx, definitions, tool => this.ctx.tools.register(tool))
     return names.map(publicToolName)
   }
 

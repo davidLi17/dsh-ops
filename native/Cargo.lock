@@ -138,7 +138,7 @@ dependencies = [
 
 [[package]]
 name = "dsh-ops-core"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -153,11 +153,11 @@ dependencies = [
 
 [[package]]
 name = "dsh-ops-darwin-metadata"
-version = "0.4.1"
+version = "0.4.3"
 
 [[package]]
 name = "dsh-ops-windows-metadata"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "winapi",
  "windows-permissions",
@@ -354,7 +354,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "ops-batch"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "cap-std",
  "ops-files",
@@ -366,7 +366,7 @@ dependencies = [
 
 [[package]]
 name = "ops-documents"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "flate2",
  "ops-files",
@@ -380,7 +380,7 @@ dependencies = [
 
 [[package]]
 name = "ops-files"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -397,7 +397,7 @@ dependencies = [
 
 [[package]]
 name = "ops-protocol"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "regex",
  "serde",
@@ -406,7 +406,7 @@ dependencies = [
 
 [[package]]
 name = "ops-results"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -421,7 +421,7 @@ dependencies = [
 
 [[package]]
 name = "ops-search"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -814,9 +814,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "9.0.1"
+version = "9.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e49ade69c4434c55dd651d36fe05f38e0578db948b773cbc01c48c4b5e560692"
+checksum = "6e04976da629d3b04204ba8105b396a193af8ad2583b2c79bfb3ab8af580a11e"
 dependencies = [
  "crc32fast",
  "flate2",

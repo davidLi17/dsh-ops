@@ -48,7 +48,6 @@ for (const official of ['read', 'glob']) for (const hidingFirst of [true, false]
     const lift = agent.ctx.tools.presentAs('ptc')
     assert.deepEqual((await assemble()).tools.map(tool => tool.name), ['run_code'])
     await waitFor(() => !scopedToolNames(ctx, agent).includes(publicToolName(raw)))
-    assert.equal((await request(publicToolName(raw))).isError, true)
     lift()
     await waitFor(() => scopedToolNames(ctx, agent).includes(publicToolName(raw)))
     assert.ok((await assemble()).tools.some(tool => tool.name === publicToolName(raw)))

@@ -1,4 +1,4 @@
-import { FILE_TOOLS, NATIVE_FILE_TOOLS, IN_PROCESS_TOOLS } from './capabilities/registry.js'
+import { FILE_TOOLS, NATIVE_FILE_TOOLS, IN_PROCESS_TOOLS, DISCOVERY_TOOL_NAME } from './capabilities/registry.js'
 export { FILE_TOOLS, FILE_MUTATIONS, IN_PROCESS_TOOLS } from './capabilities/registry.js'
 
 /** Model-facing routing, kept in one section. No shared registry mutation. */
@@ -6,6 +6,16 @@ export const TOOLING_SECTION = 'dsh-ops:repository-tooling'
 // Legacy section name kept for consumers; the plugin no longer publishes it.
 export const HOST_SHELL_SECTION = 'dsh-ops:host-shell-policy'
 export const SECTION_ORDERS = Object.freeze({ [TOOLING_SECTION]: 3250 })
+/** Prompt-section suffix and order for one enhanced preset row. */
+export const MODE_SECTION_ORDERS: Readonly<Record<string, number>> = Object.freeze({
+  'mode-standard': 3250, 'mode-ptc': 3251, 'mode-cordis': 3252,
+})
+/**
+ * The prompt section one mode row publishes.
+ * @param suffix - the mode section suffix, for example `mode-standard`.
+ * @returns the section name.
+ */
+export function modeSectionName(suffix: string): string { return `${TOOLING_SECTION}:${suffix}` }
 export const TOOL_PREFIX = 'ops_'
 // The plugin's second layer executes POSIX commands; pwsh7 uses the host tool.
 export function publicToolName(rawName: string) { return `${TOOL_PREFIX}${rawName}` }
@@ -35,18 +45,18 @@ export function renderToolingPolicy({ published, mounted, levels, shellComponent
     ? [...NATIVE_FILE_TOOLS, ...(levels?.bash ? IN_PROCESS_TOOLS : [])].map(publicToolName) : []))
   if (levels?.pwsh) names.add('pwsh')
   if (!shellComponent) names.delete('pwsh')
-  const hasDiscovery = names.has(publicToolName('discover_tools'))
+  const hasDiscovery = names.has(publicToolName(DISCOVERY_TOOL_NAME))
   const hasFiles = NATIVE_FILE_TOOLS.some(name => names.has(publicToolName(name)))
   const hasBash = names.has(BASH_TOOL)
   const hasPwsh = shellComponent && names.has('pwsh')
   if (!hasFiles && !hasBash && !hasPwsh && !hasDiscovery) return ''
-  const heading = hasBash ? '# Shell routing: bash → host PowerShell'
+  const heading = hasBash ? `# Shell routing: ${BASH_TOOL} → host PowerShell`
     : hasFiles || hasDiscovery ? '# Repository file tools' : '# Windows-native shell'
   const lines = [heading, '', '| Task | Tool |', '| --- | --- |']
   const row = (raw: string, task: string) => {
     if (names.has(publicToolName(raw))) lines.push(`| ${task} | ${publicToolName(raw)} |`)
   }
-  row('discover_tools', 'Find advanced capabilities for the next model step')
+  row(DISCOVERY_TOOL_NAME, 'Find advanced capabilities for the next model step')
   row('read_files', 'Read UTF-8 ranges from multiple files')
   row('read_table', 'Read bounded CSV / TSV lexical rows')
   row('read_docx', 'Read DOCX main-body paragraphs')
@@ -87,7 +97,7 @@ export function renderToolingPolicy({ published, mounted, levels, shellComponent
   if (hasFiles) lines.push('- ops file tools never throw: check `status` and `error.code`/`error.nextAction`; a try/catch alone misses their failures.')
   if (names.has(publicToolName('write_file')) || names.has(publicToolName('edit_file'))) lines.push('- Read the current file state first; reuse SHA-256 `revision` as `expectedRevision` (write create-only: `absent`). Receipts include new hash, bytes and lineCount; Windows preserves owner/group/ordered DACL and supported basic attributes/timestamps; readonly overwrite is refused and unsupported streams/EA/special storage fail with METADATA_UNSUPPORTED. SACL/audit labels are not preserved. Unsupported metadata is not a permission escalation. Edit hunks target the same original and must be unique/nonoverlapping; CRLF/BOM are literal.')
   if (hasFiles) lines.push('- Follow error.nextAction; authorization denials require the user to change mode, not retries. After applied/unknown effects inspect postconditions; do not switch to a shell workaround.')
-  if (names.has(BASH_TOOL)) lines.push('- Prefer bash for command execution. Use PowerShell only when Windows-native functionality is necessary; fix bash errors in bash, do not switch shells or mix their syntax.',
+  if (names.has(BASH_TOOL)) lines.push(`- Prefer ${BASH_TOOL} for command execution. Use PowerShell only when Windows-native functionality is necessary; fix ${BASH_TOOL} errors in ${BASH_TOOL}, do not switch shells or mix their syntax.`,
     '- Use command only for short commands and pipelines. For scripts longer than about 1 KB or containing heredocs, quotes, backslashes or non-ASCII text, write the script to a file first and pass script_path.',
     '- ops_bash requires description and returns kind foreground, background or promoted. Foreground has status (completed/failed), exitCode, stdout/stderr and error; background/promoted has jobId for host job_output/job_kill. Failures, including invalid arguments, return values with failure.code, failure.effectState and failure.retry; inspect unknown effects before repeating.')
   if (extraGuidance.trim()) lines.push('', extraGuidance.trim())

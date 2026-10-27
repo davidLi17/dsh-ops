@@ -25,26 +25,30 @@ OPS adds bounded file and document tools to DSH. Native mode returns compact, li
 PTC code receives typed Outcome values from the same one-shot Rust worker. Host integration is
 strict TypeScript, compiled to the existing JavaScript package paths.
 
-> [!IMPORTANT]
-> This branch is the **0.4.0 release candidate**, not a published release. Approved acceptance requires
-> at least 40% less BM-01 output than OPS 0.3.x; the official reader is a separate comparison.
-> BM-03 limits file/discovery schemas to 400 tokens while keeping Bash at startup and reporting the
-> full total separately. Final measured evidence and functional CI are both required.
-> See [release status and limitations](docs/release-0.4.0.md). Commands using `@latest` below select
-> the published package; build and pack this checkout to evaluate the candidate.
+Supported: Windows x64, Linux x64, and macOS 13+ on Apple Silicon or Intel
+(`darwin-arm64`, `darwin-x64`). See [macOS](docs/macos.md).
 
-- Native starts with `ops_read_files` and `ops_discover_tools`; the default profile enables the shell row
-  and publishes `ops_bash` on every platform. Advanced tools activate in the owning agent's next
-  provider request.
+> [!IMPORTANT]
+> This branch is the **0.4.3 local candidate**, not a published release: the component roster moved to
+> preset-mode rows. Commands using `@latest` below select the published package; build and pack this
+> checkout to evaluate the candidate. See the [changelog](docs/CHANGELOG.md).
+
+- The default profile enables the four preset-mode rows: Standard and Cordis publish the resident
+  OPS file tools, PTC publishes its typed SDK, and Minimal replaces only the Windows shell;
+  its sessions receive the `ops_discover_tools` entry whenever the discovery row is enabled. A mode row replaces the official
+  Windows shell with `ops_bash`. Advanced tools activate in the owning agent's next provider request.
 - The PTC SDK catalogue has 18 APIs: 15 file/document tools, batch, result references and its loader.
   Only the configured resident or selected APIs are exposed. Native and PTC use separate outputs.
 - Discover bounded CSV/TSV, DOCX main-body paragraphs and a restricted PDF text layer. Binary DOC,
   OCR, general PDF rendering, web search and HTML crawling are not implemented. Read the
   [document-format limits](docs/native-kernel.md) before choosing a reader.
-- Seven independently toggled rows preserve saved profile IDs and settings. Per-tool official
-  replacements are off by default. [Settings](docs/configuration-reference.md) include validated
-  built-in forms and optional browser pages with an explicit offline carrier migration.
-- The shell row is on by default on all three platforms: Windows uses the pinned Bash payload
+- Eight independently toggled rows: the four mode rows and discovery start on; Compatibility,
+  panel and TUI start off. An enabled mode row hides the official tools it replaces (read/glob/grep
+  plus the Windows pwsh); Compatibility mode keeps the official tools visible. Saved overrides for
+  the removed `shell`/`file`/`ptc`/`hide-official` rows must be deleted.
+  [Settings](docs/configuration-reference.md) include validated built-in forms and optional browser
+  pages with an explicit offline carrier migration.
+- The mode rows are on by default on all three platforms: Windows uses the pinned Bash payload
   declared by the main package — `@dsh-ops/bash-win32-x64@0.2.1` in `optionalDependencies`, so npm
   installs the independent **bash 5.3.15** (PortableGit `v2.56.0.windows.2`) that ships with ops,
   and `bashPath` can point `ops_bash` at Git Bash instead; Linux/macOS use the distribution's own
@@ -97,6 +101,10 @@ A regular DSH CLI cannot manage the reserved `desktop` profile; do not confuse i
 
 #### Update
 
+Host compatibility is declared for DSH **0.2.0-rc.2 and 0.2.1-rc.2**. See
+[host versions and display metadata](docs/usage.md#host-compatibility-and-display-metadata)
+for component icon exports, profile refresh and config/schema checks.
+
 Re-run the same `npx --yes dsh-ops@latest install --profile ...`, or use the official CLI `add dsh-ops@latest`. Reload when the app asks; restart the app when replacing code that is already loaded.
 
 #### Uninstall and status
@@ -124,13 +132,13 @@ Enable the `dsh-ops/tui` row in dsh-TUI and restart to add the OPS sidebar witho
 
 ## License
 
-Plugin source is distributed under **`MIT AND Apache-2.0`**: everything outside `licenses/fastctx/` is MIT; FastCtx is Apache-2.0. See [NOTICE](NOTICE), `licenses/fastctx/LICENSE-APACHE`, and `licenses/fastctx/NOTICE`.
+The current dsh-ops source is distributed under the **MIT License**; see [LICENSE](LICENSE). Versions before 0.3.2 bundled Apache-2.0-licensed FastCtx source; that source was removed together with the background component, and no FastCtx code or binary is part of the current distribution. FastCtx's license text and upstream notice are retained in `licenses/fastctx/`, and its historical attribution is preserved in [NOTICE](NOTICE).
 
 The separate Windows Bash payload package (the npm optional dependency `@dsh-ops/bash-win32-x64`) is distributed under its upstream components' licenses: Git for Windows includes GPL-2.0 and other licensed components, whose original licenses, notices and provenance records are kept with the payload. PowerShell stays host-managed and is distributed under Microsoft's MIT and third-party component licenses. The plugin's MIT license does not replace those licenses. See [PROVENANCE.md](docs/PROVENANCE.md).
 
 ## Acknowledgements
 
-The Rust tools are based on [yc-duan](https://github.com/yc-duan)'s Codex plugin FastCtx and use its source code. Vendor marking and deletion-only distribution changes were recorded in `vendor/fastctx/FORK.md` and `vendor/fastctx/UPSTREAM.md`, which remain in the repository history and in earlier published versions; the vendored source itself was removed with the background component. The FastCtx notice that must be reproduced follows:
+Versions before 0.3.2 bundled and distributed [yc-duan](https://github.com/yc-duan)'s Codex plugin FastCtx and used its source code to provide the Rust tool surface. FastCtx's source was removed with the background component; the current `native/` Rust core is original MIT-licensed dsh-ops code. FastCtx's license text and the notice that must be reproduced remain in `licenses/fastctx/` and [NOTICE](NOTICE) as attribution for those earlier versions:
 
 > This product includes FastCtx
 > (https://github.com/yc-duan/fastctx), Copyright (c) 2026 yc-duan,
