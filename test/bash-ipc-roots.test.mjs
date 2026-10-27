@@ -3,7 +3,7 @@ import path from 'node:path'
 import { pinnedBashExecutable } from '../lib/shells/pinned.js'
 import { confinedBash } from '../lib/bash-ipc.js'
 import { independentBashRoots } from './lib/bash-ipc-processes.mjs'
-import { assert, test, report, withTempDir } from './lib/harness.mjs'
+import { assert, test, report, withTempDir, ownWindowsFixture } from './lib/harness.mjs'
 
 await test('independent restricted Bash roots reopen the user shared section (#363)', async () => {
   if (process.platform !== 'win32') {
@@ -24,6 +24,9 @@ await test('independent restricted Bash roots reopen the user shared section (#3
     assert.ok(runtime.runtime)
     const workspace = path.join(home, 'workspace')
     fs.mkdirSync(workspace)
+    // The nested directory has its own owner on elevated Windows runners.
+    // Normalize only this disposable fixture, not a user workspace or host policy.
+    ownWindowsFixture(workspace)
     await independentBashRoots(runtime, workspace)
   })
 })

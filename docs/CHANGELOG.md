@@ -39,6 +39,9 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Initialize the nested Windows Bash IPC test workspace with the existing owned-fixture helper; keep the host ownership prerequisite and outside-workspace denial assertions unchanged.
+- Windows Bash IPC 测试的嵌套工作区使用既有自有目录夹具初始化；保留宿主所有权前置检查与越界写入拒绝断言。
+
 - Fork integration: retain PTC nested SDK access to official tools and refresh SDK declarations after lifting Native-only replacement masks; use bounded public tool lookups rather than copying the full host schema surface.
 - Fork 集成：保留 PTC 内嵌 SDK 对官方工具的访问，在解除仅用于 Native 的替代掩码后刷新 SDK 声明；使用有界公开工具查询，避免复制宿主完整 schema。
 
