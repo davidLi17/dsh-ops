@@ -6,13 +6,23 @@ import { hostPwshUpgradePlan, upgradeHostPwsh, runUpgradeProcess } from '../lib/
 import { applyComponent } from '../lib/index.js'
 import { resolveShells } from '../lib/shells.js'
 import { describePackages } from '../scripts/lib/build/assemble.js'
-import { writeReleaseRecords } from '../scripts/lib/build/pack.js'
+import { packDirectory, writeReleaseRecords } from '../scripts/lib/build/pack.js'
 import { stepCheck } from '../scripts/lib/build/check.js'
 import { injectedOptionalDependencies } from '../scripts/lib/build/publish-dir.js'
 import { assert, report, test, withTempDir, TEST_HOME, PACKAGE_ROOT } from './lib/harness.mjs'
 import { bootHost, shutdown } from './lib/host.mjs'
 
 const ARGS = ['install', '--id', 'Microsoft.PowerShell', '--exact', '--source', 'winget', '--installer-type', 'wix']
+// The release checker now reads actual tar headers, so this fixture must be an archive.
+async function packMainFixture(directory, dist) {
+  for (const target of ['linux-x64', 'darwin-arm64', 'darwin-x64']) {
+    const worker = path.join(directory, 'runtime', target, 'dsh-ops-worker')
+    fs.mkdirSync(path.dirname(worker), { recursive: true })
+    fs.writeFileSync(worker, 'fixture worker bytes; never executed')
+  }
+  await packDirectory(directory, dist)
+}
+
 function fixture(root) {
   const file = path.join(root, 'Microsoft/WindowsApps/winget.exe')
   fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, 'never execute this fixture')
@@ -159,7 +169,7 @@ await test('a payload release records the package at its declared pin, not the m
     const publishDir = path.join(dist, 'publish', `${manifest.name}-${manifest.version}`)
     fs.mkdirSync(publishDir, { recursive: true })
     fs.writeFileSync(path.join(publishDir, 'package.json'), JSON.stringify({ ...manifest, optionalDependencies: injectedOptionalDependencies(context) }))
-    fs.writeFileSync(path.join(dist, `${manifest.name}-${manifest.version}.tgz`), 'main tarball fixture')
+    await packMainFixture(publishDir, dist)
     await writeReleaseRecords(context, [{ pkg, provenance }])
     assert.equal(await stepCheck(context), 0, 'a payload pinned at its own version must pass the release gate')
     fs.writeFileSync(path.join(stage, 'provenance.json'), JSON.stringify({ ...provenance, version: manifest.version }))
@@ -174,7 +184,7 @@ await test('main-only release records validate without shell payloads and reject
     delete manifest.private
     fs.writeFileSync(path.join(directory, 'package.json'), JSON.stringify(manifest))
     const tarball = manifest.name + '-' + manifest.version + '.tgz'
-    fs.writeFileSync(path.join(dist, tarball), 'fixture archive bytes checked by SHA-256')
+    await packMainFixture(directory, dist)
     // A main-only record: the payload package itself is covered by the assemble/closure suites.
     const context = { dist, packages: [], tarballs: {} }
     await writeReleaseRecords(context, [])
