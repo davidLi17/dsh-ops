@@ -5,6 +5,17 @@ All notable changes to this package are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] — 2026-10-29 — Fork runtime archive permissions
+
+- Restore mode 0755 for the three packaged Unix workers when npm packing on Windows, and
+  check the archive directly before extraction. File payloads and runtime access checks stay unchanged.
+- 修复 Windows 打包后 Linux/macOS worker 在安装包中丢失执行位的问题：仅将三个 Unix worker 的归档权限设为 0755，打包后直接检查归档，不依赖解包后的 chmod。保留全部 PTC 定制与原有运行时权限检查。
+- Evaluated upstream formal v0.4.4 (`ed72f1edf5915bb45c400fe679e1f0a6fe3f9c16`,
+  `fc11890f7668c9912fcde1df1ca89810e1cbc031`). Its Windows fixture repair was already
+  functionally present in fork `d72c107`; this archive repair is an independent implementation,
+  not a merge of upstream history. Upstream version metadata is aligned; no dependency upgrade.
+- 已评估上游正式 v0.4.4。Windows 测试 fixture 修复已等价包含；本次独立修复归档权限，未合并上游 Git 历史，未升级依赖。
+
 ## [0.4.3] — 2026-10-27 — Preset-mode component roster
 
 ### Breaking changes

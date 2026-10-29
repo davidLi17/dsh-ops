@@ -10,6 +10,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { verifyPackedRuntimeModes } from './runtime-modes.js'
 import { stageDir } from './assemble.js'
 import { injectedOptionalDependencies, printInjection } from './publish-dir.js'
 import { mainManifest, readJsonIfExists, sha256File, size, treeFiles } from './util.js'
@@ -174,7 +175,8 @@ export async function stepCheck(context) {
   else if (sums.size > 0 && sums.get(path.basename(mainTarball)) !== await sha256File(mainTarball)) {
     missing('publish', `${path.basename(mainTarball)} is not the digest SHA256SUMS records`)
   } else {
-    ok('publish', `${path.basename(mainTarball)} (${size(fs.statSync(mainTarball).size)})`)
+    verifyPackedRuntimeModes(mainTarball)
+    ok('publish', `${path.basename(mainTarball)} (${size(fs.statSync(mainTarball).size)}), Unix worker modes 0755`)
   }
 
   // 5. The release-wide record.
