@@ -1,3 +1,5 @@
+> **davidLi17 自用版 26.10.31-lhg**：基于上游 0.5.0-alpha3 的明确选定改进，不是上游正式版。请使用本仓库 Actions 的 `release-dist` 安装包，不要使用下文上游 npm 命令安装此自用版。升级前先备份并审核[配置迁移](docs/fork-migration.zh.md)；[本次来源与范围](docs/FORK-MAINTENANCE.md)。
+
 <p align="center">
   <img src="docs/assets/readme/dsh-ops-header.svg" alt="dsh-ops 表头" width="640">
 </p>
@@ -26,13 +28,13 @@ OPS 为 DSH 增加有界文件与文档工具。Native 模式返回紧凑、带�
 支持：Windows x64、Linux x64，以及 macOS 13+ 的 Apple Silicon 与 Intel（`darwin-arm64`、`darwin-x64`）。见 [macOS](docs/macos.zh.md)。
 
 > [!IMPORTANT]
-> 自用 Fork **0.4.4** 修复完整 CI 安装包内 Unix worker 的执行权限。请使用本次构建的新安装包；之前 Fork 0.4.3 安装包的 Unix worker 缺少执行位。PTC 定制与预设模式行为保持不变。
+> 本分支是 **0.5.0 未发布候选**：配置统一为单个 `dsh-ops` 行。下方 `@latest` 命令安装已发布版本；评估候选版本需自行构建本检出目录并打包，变更见[变更日志](docs/CHANGELOG.md)。
 
-- 默认 profile 启用四个预设模式行：Standard/Cordis 发布常驻 OPS 文件工具，PTC 发布类型化 SDK，Minimal 只替换 Windows shell；discovery 行启用时其会话获得 `ops_discover_tools` 动态加载入口；`ops_bash` 由模式行在 Windows 上替换官方 pwsh。高级工具在所属 agent 的下一次供应商请求中激活。
+- 单行默认启用四个内置消费者：Standard/Cordis 发布 Native 常驻文件工具，PTC 发布类型化 API，Minimal 没有文件常驻基线。Native 发现与 PTC SDK 加载独立配置；高级选择仅在所属 agent 下一次请求激活，不在发现时执行动作。
 - PTC SDK 目录包含 18 个 API：15 个文件/文档工具，加批处理、结果引用和加载器。仅暴露配置为常驻或已选择的 API；Native 与 PTC 分别提供自己的输出形式。
 - 可按需发现有界 CSV/TSV、DOCX 主体段落与受限 PDF 文本层读取。尚不支持二进制 DOC、OCR、通用 PDF 渲染、网页搜索或 HTML 抓取；使用前请查看[文档格式限制](docs/原生内核.md)。
-- 八个组件独立启停：四个模式行与 discovery 默认开，兼容模式、panel 与 TUI 默认关。启用模式行会自动隐藏被替换的官方工具（read/glob/grep + Windows pwsh），兼容模式开启则保留官方工具。[设置](docs/配置参考.md)提供严格校验的内置表单；可选浏览器页面需显式执行离线承载行迁移。旧 `shell`/`file`/`ptc`/`hide-official` 覆盖需删除。
-- 模式行在三个平台默认开启：Windows 使用主包声明的固定 bash 载荷——`optionalDependencies` 中的 `@dsh-ops/bash-win32-x64@0.2.1`，npm 安装时自动拉取 ops 自带的独立 **bash 5.3.15**（PortableGit `v2.56.0.windows.2`），也可用 `bashPath` 把 `ops_bash` 指向 git bash；Linux/macOS 使用发行版自带 bash，可用 `config.bashPath` 覆盖。`dsh-ops bash-runtime install` 保留为安装/修复与选择受管理副本的路径。PowerShell 仍由宿主管理；升级命令先预览标准安装，仅加 `--yes` 才执行。
+- 一个原生 Switch 配置页管理内置与显式列出的自定义消费者。总开关门控预设选项但保留保存意图；常驻、动态加载、Bash、文件替换和 Windows 宿主 PowerShell 隐藏独立控制，panel 与 TUI 默认关闭。内外消费者共用装配器，未列出的预设保持原样。旧行覆盖须迁入单行，兼容行已删除；见[设置](docs/配置参考.md)和[内部架构](docs/内部架构.md)。
+- 内置消费者默认开启：Windows 使用主包声明的固定 bash 载荷——`optionalDependencies` 中的 `@dsh-ops/bash-win32-x64@0.2.1`，npm 安装时自动拉取 ops 自带的独立 **bash 5.3.15**（PortableGit `v2.56.0.windows.2`），也可用 `bashPath` 把 `ops_bash` 指向 git bash；Linux/macOS 使用发行版自带 bash，可用 `config.bashPath` 覆盖。`dsh-ops bash-runtime install` 保留为安装/修复与选择受管理副本的路径。PowerShell 仍由宿主管理；升级命令先预览标准安装，仅加 `--yes` 才执行。
 
 OPS 只发布自身作用域内的工具与可选路由提示，不改写共享工具注册表。每次调用均检查权限与取消状态。Windows 受限 Bash 仍存在文档注明的部分约束与运行时兼容性限制。
 
@@ -102,6 +104,8 @@ npx --yes dsh-ops@latest uninstall --profile desktop
 在 dsh-TUI 中启用 `dsh-ops/tui` 行并重启，即可添加 OPS 侧栏；不抢焦点，不执行额外工具调用。没有 `tuiPanels` 的宿主仅让该可选行等待，不影响其它组件。见 [侧栏说明](docs/tui-panel.zh.md)。 聚焦后可用 `f` 筛选、`n`/`p` 本地翻页、`a` 确认跨会话提醒；只浏览有界保留元数据，不拉取结果分页。
 
 ## 文档
+
+- [第三方预设集成接口](docs/集成接口.md) · [外部 Native 提供者](docs/外部工具提供者.md) · [作用域诊断](docs/集成诊断.md)
 
 - [使用指南](docs/使用指南.md) · [常见问题](docs/常见问题.md) · [组件参考](docs/组件参考.md) · [配置参考](docs/配置参考.md)
 - [PTC 设计与使用](docs/native-ptc.md) · [手动验证](docs/手动验收.md)

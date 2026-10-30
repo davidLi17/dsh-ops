@@ -3,14 +3,18 @@ import path from 'node:path'
 import { createScope } from '@deepseek-ai/dsh-scope'
 import Sandbox from '@deepseek-ai/dsh-sandbox-local'
 import Subprocess from '@deepseek-ai/dsh-subprocess-local'
-import * as Ptc from '../lib/ptc/index.js'
+import * as PtcModule from '../lib/ptc/index.js'
 import { registerNativeProvider, nativeProviders } from '../lib/file/result-provider.js'
-import * as Discovery from '../lib/components/discovery/index.js'
-import * as Hiding from '../lib/components/hide-official/index.js'
+import * as DiscoveryModule from '../lib/components/discovery/index.js'
+import * as HidingModule from '../lib/components/hide-official/index.js'
 import { isNativePresentation, isPresentationProbe } from '../lib/presentation.js'
 import { publicToolName } from '../lib/policy.js'
 import { bootHost, shutdown, scopedToolNames, registryHasOwnRegister } from './lib/host.mjs'
 import { assert, test, report, withTempDir, waitFor } from './lib/harness.mjs'
+import { legacyComponent } from './lib/legacy-component.mjs'
+const Ptc = legacyComponent(PtcModule)
+const Discovery = legacyComponent(DiscoveryModule)
+const Hiding = legacyComponent(HidingModule)
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done }); return { promise, resolve } }
 const tool = name => ({ name, description: name, parameters: { type: 'object' }, output: { schema: { type: 'object' }, render: () => [] }, execute: async () => ({}) })
 let sequence = 0
@@ -46,7 +50,15 @@ for (const official of ['read', 'glob']) for (const hidingFirst of [true, false]
     assert.equal((await request(official)).isError, true, 'selected official dispatch remains blocked')
     ctx.provide('ptcRuntime', { language: 'typescript' })
     const lift = agent.ctx.tools.presentAs('ptc')
+    // A run_code scope cannot own a native counterpart, so it is never masked and
+    // never gated: the model receives the program entry and nothing else.
     assert.deepEqual((await assemble()).tools.map(tool => tool.name), ['run_code'])
+    assert.ok(scopedToolNames(ctx, agent).includes(official), 'a collapsed scope hides nothing')
+    const direct = await request(official)
+    assert.equal(direct.isError, true, 'host refuses direct calls outside the collapsed PTC transport')
+    const nested = await ctx.tools.execute({ name: official, arguments: {}, agent, callId: 'nested-readiness',
+      parent: 'fixture-transport-token', signal: new AbortController().signal })
+    assert.equal(nested.isError, false, 'official nested SDK dispatch stays available in a collapsed scope')
     await waitFor(() => !scopedToolNames(ctx, agent).includes(publicToolName(raw)))
     lift()
     await waitFor(() => scopedToolNames(ctx, agent).includes(publicToolName(raw)))
@@ -103,7 +115,8 @@ await test('real PTC Native shadows retain exact OPS ownership while PTC definit
     assert.equal(assembled.tools.some(tool => tool.name === 'read'), false)
     const value = await ctx.tools.execute({ name: original.name, arguments: {}, agent: child, callId: 'owned-shadow', signal: new AbortController().signal })
     assert.equal(value.isError, false, JSON.stringify(value))
-    assert.deepEqual((await ctx.systemPrompt.assemble({ scope: parent })).tools.map(tool => tool.name), ['run_code'])
+    assert.deepEqual((await ctx.systemPrompt.assemble({ scope: parent })).tools.map(tool => tool.name), ['run_code'],
+      'a collapsed scope is not gated')
     removeOwned()
     await assert.rejects(ctx.systemPrompt.assemble({ scope: child }), /READINESS_BLOCKED/)
   } finally { await shutdown(ctx) }

@@ -1,5 +1,6 @@
 import { createScope } from '@deepseek-ai/dsh-scope'
 import { visibleToolNames } from '../lib/tool-visibility.js'
+import { legacyComponent } from './lib/legacy-component.mjs'
 import { applyComponent } from '../lib/index.js'
 import { assert, report, test } from './lib/harness.mjs'
 import { bootHost, shutdown } from './lib/host.mjs'
@@ -47,7 +48,7 @@ await test('shell publication and denial inspect only their known tool names (#3
     let schemasRead = 0
     const original = tools.schemas
     tools.schemas = function (...args) { schemasRead++; return original.apply(this, args) }
-    await ctx.plugin({ apply(inner) { applyComponent(inner, { publishBashTool: false, shellPolicy: 'deny-host-shell', deniedHostTools: ['bash'], configUpdateVersion: 2 }, 'shell') } })
+    await ctx.plugin(legacyComponent({ apply(inner) { applyComponent(inner, { publishBashTool: false, shellPolicy: 'deny-host-shell', deniedHostTools: ['bash'], configUpdateVersion: 2 }, 'shell') } }))
     assert.equal(schemasRead, 0, 'mount must not clone the complete tool schema surface')
     assert.equal(tools.get('bash', agent), undefined, 'denied host tool remains restricted')
     schemasRead = 0

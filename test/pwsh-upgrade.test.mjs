@@ -15,8 +15,8 @@ import { bootHost, shutdown } from './lib/host.mjs'
 const ARGS = ['install', '--id', 'Microsoft.PowerShell', '--exact', '--source', 'winget', '--installer-type', 'wix']
 // The release checker now reads actual tar headers, so this fixture must be an archive.
 async function packMainFixture(directory, dist) {
-  for (const target of ['linux-x64', 'darwin-arm64', 'darwin-x64']) {
-    const worker = path.join(directory, 'runtime', target, 'dsh-ops-worker')
+  for (const target of ['linux-x64', 'darwin-arm64', 'darwin-x64', 'win32-x64']) {
+    const worker = path.join(directory, 'runtime', target, target === 'win32-x64' ? 'dsh-ops-worker.exe' : 'dsh-ops-worker')
     fs.mkdirSync(path.dirname(worker), { recursive: true })
     fs.writeFileSync(worker, 'fixture worker bytes; never executed')
   }

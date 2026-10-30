@@ -1,6 +1,6 @@
 {
   "name": "dsh-ops",
-  "version": "0.4.4",
+  "version": "26.10.31-lhg",
   "publishConfig": {
     "access": "public"
   },
@@ -116,12 +116,10 @@
     "./mode-cordis/package.json": "./lib/components/mode-cordis/package.json",
     "./mode-cordis/locale/*.json": "./lib/components/mode-cordis/locale/*.json",
     "./mode-cordis/icon": "./lib/components/mode-cordis/icon.png",
-    "./compat": {
-      "default": "./lib/components/compat/index.js"
+    "./integration": {
+      "types": "./lib/integration/index.d.ts",
+      "default": "./lib/integration/index.js"
     },
-    "./compat/package.json": "./lib/components/compat/package.json",
-    "./compat/locale/*.json": "./lib/components/compat/locale/*.json",
-    "./compat/icon": "./lib/components/compat/icon.png",
     "./adapter/dsh": {
       "default": "./lib/adapter/dsh/host.js"
     },
@@ -141,9 +139,11 @@
         "@deepseek-ai/dsh-api-gateway",
         "@deepseek-ai/dsh-client-ui-renderer",
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-plugin-manager"
+        "@deepseek-ai/dsh-client-ui-plugin-manager",
+        "@deepseek-ai/dsh-client-ui-primitives"
       ],
-      "platform": "web"
+      "platform": "web",
+      "immediately": true
     }
   },
   "files": [

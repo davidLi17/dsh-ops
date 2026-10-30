@@ -1,3 +1,5 @@
+> **davidLi17 自用版 26.10.31-lhg**：基于上游 0.5.0-alpha3 的明确选定改进，不是上游正式版。请使用本仓库 Actions 的 `release-dist` 安装包，不要使用下文上游 npm 命令安装此自用版。升级前先备份并审核[配置迁移](docs/fork-migration.zh.md)；[本次来源与范围](docs/FORK-MAINTENANCE.md)。
+
 <p align="center">
   <img src="docs/assets/readme/dsh-ops-header.svg" alt="dsh-ops 表头" width="640">
 </p>
@@ -22,8 +24,8 @@
 
 以提高token效率为目的，提供新增的ops系列工具并隐藏部分官方工具为方案的插件，低改动面，低侵入性，与其他插件广泛兼容。
 
-- （仅 Windows）启用与 dsh 原生 bash 行为一致的 ops_bash；启用模式行时用它替换官方 pwsh，兼容模式则保留官方工具
-- 四个预设模式行分别增强内置 Minimal/Standard/PTC/Cordis preset：Standard 与 Cordis 替换官方 read/glob/grep，PTC 提供类型化 SDK，Minimal 只替换 Windows shell；discovery 行启用时其会话始终获得动态加载入口；兼容模式（默认关闭）可保留全部官方工具
+- Bash 与宿主 Shell 隐藏独立配置；Windows 可用 ops_bash 替代 pwsh，也可保留官方 Shell。
+- Native/PTC 消费者预设发布共享的有界工具面；Bash 由单行开关控制，关闭替换时原版工具保持可用。
 - 启用 DSH 预留的 `tools_addition` 动态工具加载，并提供渐进式纰漏的工具，作为高级功能（如pdf、word读取、超多文件批量修改）的加载平台，大大减少常见特定场景的token消耗量，且不会导致系统提示词膨胀
 - 为 Native 模式提供返回紧凑、带行号和更好错误回馈的工具以遏制报错循环，减少调用轮次
 - 为 PTC 模式提供一些返回结构化 JSON 值的工具以降低 ai 在 ptc 模式下编写 TypeScript 代码的token总量和心智负担
@@ -35,6 +37,8 @@
   <img src="https://github.com/user-attachments/assets/a0c0fdfe-337a-43d5-8ca2-326d9287bfea" height="300" alt="第二张图">
 </p>
 <p align="center"><em>左：deepseek-v4.1-flash-1017在各harness的跑分与开销<br>右：ops在自用benchmark上取得的的成绩。完整benchmark将随后续更新发布<br>dsh-ops团队将致力于持续优化dsh的token效率，以更低的成本更好地完成同样的任务</em></p>
+
+交流群：企鹅 1127808570
 
 ## 安装、更新、卸载
 
@@ -93,7 +97,7 @@ npx --yes dsh-ops@latest uninstall --profile desktop
 
 旧版显式 provision 的 `<DSH_HOME>/dsh-ops/` 文件（provision 的 shell，以及早期版本可 provision 的 FastCtx 运行时）需单独清理：`npx --yes dsh-ops@latest uninstall --yes`。已移除的后台组件留下的 `~/.fastctx/` 状态默认不删；需要时显式加 `--purge-fastctx`。
 
-组件 bundle 现为八行：`mode-minimal`、`mode-standard`、`mode-ptc`、`mode-cordis`、`discovery`、`compat`、`panel`、`tui`。旧的 `shell`、`file`、`ptc`、`hide-official` 行已移除，请删除为它们保存的 profile 覆盖，并按需重设模式开关。
+组件 bundle 只插入一个 `dsh-ops` 行：其中按预设配置常驻、动态加载、Bash、文件替换与宿主 PowerShell 隐藏，并可通过 `presets` 显式接入自定义消费者。内置与外部预设共用装配流程。旧 `mode-*`、`discovery`、`compat`、`panel`、`tui` 及更早的 `shell`、`file`、`ptc`、`hide-official` 行覆盖须迁入单行；兼容开关已移除，改用各项隐藏开关。见[配置参考](docs/配置参考.md)。
 
 原 `dsh-ops/background` 组件（FastCtx 后台任务）已移除。仍保留该行的 profile 照常加载：该行不发布任何工具，只记录一条警告，可直接删除。
 
@@ -102,6 +106,8 @@ npx --yes dsh-ops@latest uninstall --profile desktop
 在 dsh-TUI 中启用 `dsh-ops/tui` 行并重启，即可添加 OPS 侧栏；不抢焦点，不执行额外工具调用。没有 `tuiPanels` 的宿主仅让该可选行等待，不影响其它组件。见 [侧栏说明](docs/tui-panel.zh.md)。 聚焦后可用 `f` 筛选、`n`/`p` 本地翻页、`a` 确认跨会话提醒；只浏览有界保留元数据，不拉取结果分页。
 
 ## 文档
+
+- [第三方预设集成接口](docs/集成接口.md) · [外部 Native 提供者](docs/外部工具提供者.md) · [作用域诊断](docs/集成诊断.md)
 
 - [使用指南](docs/使用指南.md) · [常见问题](docs/常见问题.md) · [组件参考](docs/组件参考.md) · [配置参考](docs/配置参考.md)
 - [PTC 设计与使用](docs/native-ptc.md) · [手动验证](docs/手动验收.md)
@@ -112,6 +118,30 @@ npx --yes dsh-ops@latest uninstall --profile desktop
 当前 `dsh-ops` 源码以 **MIT** 许可分发，见 [LICENSE](LICENSE)。`0.3.2` 之前的版本曾内置以 Apache-2.0 许可的 FastCtx 源码；该源码随后台组件一并移除，当前发行版不再包含任何 FastCtx 代码或二进制。FastCtx 的许可文本与上游声明保留在 `licenses/fastctx/`，历史归属见 [NOTICE](NOTICE)。
 
 独立的 Windows bash 载荷包（npm 可选依赖 `@dsh-ops/bash-win32-x64`）另按上游组件许可证分发：Git for Windows 包含 GPL-2.0 等许可组件，其原始许可证、声明及来源记录随载荷保留；PowerShell 由宿主管理，按其 MIT 与第三方组件许可分发。插件的 MIT 许可不替代这些许可。详见 [PROVENANCE.md](docs/PROVENANCE.md)。
+
+## 联动！
+
+dsh-ops和很多优质的项目互相之间有联动，如果你觉得帮到了你的话，记得给大家star哦~
+
+### 相关dsh插件
+
+dsh-ops与以下dsh插件存在双向之间的代码联动，同时安装并启动后有额外的联动功能
+
+| 插件                                                         | Stars | 介绍                                                         | 联动项                             |
+| ------------------------------------------------------------ | ------ | ------------------------------------------------------------ | ---------------------------------- |
+| [dsh-TUI](https://github.com/ccch1mneyyy/dsh-TUI)            | 6k⭐    | DSH 社区内首个被官方推荐的插件！为DSH补上了缺失的TUI，高性能低占用，界面顶级，交互流畅 | 同时开启后在dsh-tui中可显示ops侧栏 |
+| [DeepSeek-Balance-Whale-Widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) | 6k⭐    | 可以随时看余额的可爱小鲸鱼！几乎登上所有榜单的DSH必装插件之一！ | 暂时保密~                          |
+| ...                                                          |        | ...                                                          | ...                                |
+
+### 相关项目
+
+dsh-ops与以下项目有协作关系
+
+| 项目                                                         | Stars | 介绍                                             | 协作内容                               |
+| ------------------------------------------------------------ | ------ | ------------------------------------------------ | -------------------------------------- |
+| [dsh-tauri](https://github.com/dsh-tauri/deepseek-harness-desktop) | 3k   ⭐    | 稳定，安全且非常有技术品味的tauri版本dsh客户端！ | dsh-tauri内置了dsh-ops并联合调优       |
+| [niubash](https://github.com/unixwin/niubash)                | 300⭐   | 比Git bash更轻量，更高性能的 Bash For Windows    | dsh-ops使用niubash的bash实现并联合调优 |
+| ...                                                          |        | ...                                              | ...                                    |
 
 ## 致谢
 

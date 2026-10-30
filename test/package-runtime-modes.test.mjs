@@ -5,7 +5,7 @@ import { gunzipSync, gzipSync } from 'node:zlib'
 import { createHash } from 'node:crypto'
 import { assert, test, report, withTempDir } from './lib/harness.mjs'
 import { packDirectory } from '../scripts/lib/build/pack.js'
-import { normalizePackedRuntimeModes, verifyPackedRuntimeModes } from '../scripts/lib/build/runtime-modes.js'
+import { fixUnixWorkerModes, checkUnixWorkerModes } from '../scripts/lib/build/tar-modes.js'
 import { npm } from '../scripts/lib/build/util.js'
 
 const targets = ['linux-x64', 'darwin-arm64', 'darwin-x64']
@@ -32,6 +32,9 @@ function fixture(home) {
     fs.writeFileSync(path.join(dir, 'dsh-ops-worker'), `binary payload ${target}\0`, { mode: 0o644 })
     fs.chmodSync(path.join(dir, 'dsh-ops-worker'), 0o644)
   }
+  const windows = path.join(directory, 'runtime/win32-x64/dsh-ops-worker.exe')
+  fs.mkdirSync(path.dirname(windows), { recursive: true })
+  fs.writeFileSync(windows, 'Windows worker fixture; never executed')
   return { directory, dist, file: path.join(dist, 'dsh-ops-0.0.0.tgz') }
 }
 
@@ -40,7 +43,7 @@ await test('release packing preserves three Unix execute modes without changing 
   npm(['pack', '--ignore-scripts', '--pack-destination', dist, '--json'], { cwd: directory })
   const before = entries(file)
   for (const name of names) assert.equal(before.get(name).mode, 0o644)
-  assert.throws(() => verifyPackedRuntimeModes(file), /not mode 0755/)
+  await assert.rejects(checkUnixWorkerModes(file), /0755/)
   const packed = await packDirectory(directory, dist)
   const after = entries(file)
   assert.deepEqual([...after.keys()], [...before.keys()])
@@ -51,20 +54,20 @@ await test('release packing preserves three Unix execute modes without changing 
   }
   assert.equal(packed.sha256, createHash('sha256').update(fs.readFileSync(file)).digest('hex'))
   assert.equal(packed.bytes, fs.statSync(file).size)
-  verifyPackedRuntimeModes(file)
+  await checkUnixWorkerModes(file)
 }))
 
-await test('missing workers and invalid headers fail without replacing the original archive', () => withTempDir('packed-invalid', home => {
+await test('missing workers and invalid headers fail without replacing the original archive', () => withTempDir('packed-invalid', async home => {
   const { directory, dist, file } = fixture(home)
   fs.unlinkSync(path.join(directory, 'runtime', targets[0], 'dsh-ops-worker'))
   npm(['pack', '--ignore-scripts', '--pack-destination', dist, '--json'], { cwd: directory })
   const original = fs.readFileSync(file)
-  assert.throws(() => normalizePackedRuntimeModes(file), /Missing packed worker/)
+  await assert.rejects(fixUnixWorkerModes(file), /Missing worker member/)
   assert.deepEqual(fs.readFileSync(file), original)
   const corrupt = gunzipSync(original); corrupt[0] ^= 1
   fs.writeFileSync(file, gzipSync(corrupt))
   const damaged = fs.readFileSync(file)
-  assert.throws(() => normalizePackedRuntimeModes(file), /Invalid npm tar header/)
+  await assert.rejects(fixUnixWorkerModes(file))
   assert.deepEqual(fs.readFileSync(file), damaged)
 }))
 report('package-runtime-modes')

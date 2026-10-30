@@ -9,8 +9,8 @@
  */
 
 import fs from 'node:fs'
+import { checkUnixWorkerModes } from './tar-modes.js'
 import path from 'node:path'
-import { verifyPackedRuntimeModes } from './runtime-modes.js'
 import { stageDir } from './assemble.js'
 import { injectedOptionalDependencies, printInjection } from './publish-dir.js'
 import { mainManifest, readJsonIfExists, sha256File, size, treeFiles } from './util.js'
@@ -175,8 +175,16 @@ export async function stepCheck(context) {
   else if (sums.size > 0 && sums.get(path.basename(mainTarball)) !== await sha256File(mainTarball)) {
     missing('publish', `${path.basename(mainTarball)} is not the digest SHA256SUMS records`)
   } else {
-    verifyPackedRuntimeModes(mainTarball)
-    ok('publish', `${path.basename(mainTarball)} (${size(fs.statSync(mainTarball).size)}), Unix worker modes 0755`)
+    ok('publish', `${path.basename(mainTarball)} (${size(fs.statSync(mainTarball).size)})`)
+  }
+
+  if (fs.existsSync(mainTarball)) {
+    try {
+      await checkUnixWorkerModes(mainTarball)
+      ok('modes', 'all three Unix workers have TAR mode 0755')
+    } catch (error) {
+      missing('modes', error.message)
+    }
   }
 
   // 5. The release-wide record.

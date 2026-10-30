@@ -5,22 +5,30 @@
 import type { Context } from './adapter/dsh/types.js'
 import type { ToolGuard } from './adapter/dsh/types.js'
 import type { OfficialReplacement } from './official-tool-catalog.js'
-import { nativeProviders } from './file/result-provider.js'
-import { isPresentationProbe } from './presentation.js'
+import { nativeProviders } from './publication/providers.js'
+import { isPresentationProbe } from './publication/presentation.js'
 import { resolveHidingConfig } from './config.js'
 export { resolveHidingConfig } from './config.js'
 import { OFFICIAL_REPLACEMENTS } from './official-tool-catalog.js'
 import { safeDispose } from './teardown.js'
+import { retired as retiredLegacyRow } from './settings/legacy.js'
 
 interface Entry { context: Context; lifts: (() => void)[]; cleanupError?: string; collapsed?: boolean; error?: string; reported?: string }
 interface Plan { deny: string[]; failure?: string }
 const collapsed = (names: string[]): boolean => names.length > 0 && names.every(name => name === 'run_code')
+// Newer hosts attach the wire tool array after the assembly waterfall.
+// Only their nonempty PTC-only section proves a collapsed presentation then.
+const collapsedAssembly = (assembly: { tools?: { name: string }[]; sections?: { name: string; text: string }[] }): boolean =>
+  Array.isArray(assembly.tools) ? collapsed(assembly.tools.map(tool => tool.name))
+    : Array.isArray(assembly.sections) && assembly.sections.some(section =>
+      section.name === 'tools:ptc-only' && Boolean(section.text.trim()))
 const message = (error: unknown): string => error instanceof Error ? error.message : String(error)
 
 export const name = 'dsh-ops-hide-official'
 const blocked = (detail: string): string => `READINESS_BLOCKED (EXECUTOR_UNAVAILABLE): dsh-ops hide-official cannot verify selected replacements: ${detail}. Restore the selected OPS tools, remove the selection from replaceTools, or disable the dsh-ops-hide-official row.`
 
 export function apply(root: Context, raw?: unknown): void {
+  if (retiredLegacyRow(root, 'hide-official')) return
   const { replaceTools }: { replaceTools: OfficialReplacement[] } = resolveHidingConfig(raw)
   // Empty and legacy-only rows install no hooks and cannot block a session.
   if (!replaceTools.length) return
@@ -151,7 +159,7 @@ export function apply(root: Context, raw?: unknown): void {
       // The registry is presentation-agnostic. Only the assembled wire surface
       // can establish that selected tools are SDK calls, not Native duplicates.
       const wasMasked = entry.lifts.length > 0
-      const ptcOnly = Array.isArray(assembly.tools) && collapsed(assembly.tools.map(schema => schema.name))
+      const ptcOnly = collapsedAssembly(assembly)
       if (Boolean(entry.collapsed) !== ptcOnly) {
         entry.collapsed = ptcOnly
         lastSurface = undefined
@@ -163,15 +171,15 @@ export function apply(root: Context, raw?: unknown): void {
       let result
       try { result = ptcOnly && wasMasked && !entry.error ? await ctx.systemPrompt.assemble(context) : await next() }
       catch (error) { throw block(context.scope, `agent prompt assembly could not be verified: ${message(error)}`) }
-      if (!Array.isArray(result?.tools)) throw block(context.scope, 'assembled tool schemas unavailable')
-      const names = result.tools.map(schema => schema.name)
-      if (entry.collapsed !== collapsed(names)) {
-        entry.collapsed = collapsed(names)
+      const names = Array.isArray(result?.tools) ? result.tools.map(schema => schema.name) : []
+      if (entry.collapsed !== collapsedAssembly(result)) {
+        entry.collapsed = collapsedAssembly(result)
         lastSurface = undefined
       }
       reconcile()
       if (entry.error) throw new Error(entry.error)
-      const leaked = entry.collapsed ? [] : names.filter(hideable)
+      const leaked = entry.collapsed ? [] : Array.isArray(result?.tools) ? names.filter(hideable)
+        : replaceTools.filter(tool => tools.get(tool, context.scope) !== undefined)
       if (leaked.length) throw block(context.scope, `assembled surface still contains hidden official tools: ${leaked.join(', ')}`)
       return result
     })

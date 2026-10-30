@@ -17,9 +17,9 @@ function fixture(root, targets = PLATFORMS) {
   const pkg = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT,'package.json'),'utf8'))
   const manifest = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT,'dsh-plugin.json'),'utf8'))
   fs.mkdirSync(path.join(root,'bin'),{recursive:true})
-  fs.mkdirSync(path.join(root,'lib/ptc'),{recursive:true})
+  fs.mkdirSync(path.join(root,'lib/execution'),{recursive:true})
   for (const name of ['native-runtime.mjs','check-release.mjs']) fs.copyFileSync(path.join(PACKAGE_ROOT,'bin',name),path.join(root,'bin',name))
-  fs.copyFileSync(path.join(PACKAGE_ROOT,'lib/ptc/runtime.js'),path.join(root,'lib/ptc/runtime.js'))
+  fs.copyFileSync(path.join(PACKAGE_ROOT,'lib/execution/runtime.js'),path.join(root,'lib/execution/runtime.js'))
   fs.writeFileSync(path.join(root,'package.json'),JSON.stringify(pkg))
   fs.writeFileSync(path.join(root,'dsh-plugin.json'),JSON.stringify(manifest))
   for (const target of targets) {
@@ -74,7 +74,7 @@ await test('half-staged and unexpected targets are never silently skipped',async
 }))
 await test('manifest exact targets, npm platform filters and shell pins must agree',async()=>withTempDir('release-drift',root=>{
   fixture(root); const file=path.join(root,'dsh-plugin.json'), manifest=JSON.parse(fs.readFileSync(file,'utf8'))
-  manifest.contributes['x-components'].find(c=>c.id==='dsh-ops-mode-ptc').targets.push('win32-arm64')
+  manifest.contributes['x-components'].find(c=>c.id==='dsh-ops').targets.push('win32-arm64')
   fs.writeFileSync(file,JSON.stringify(manifest)); assert.match(run(root).out,/disagree/)
 }))
 await test('release closure requires the pinned Bash payload and refuses a PowerShell dependency', async () => withTempDir('release-shell-dep', root => {
@@ -96,6 +96,29 @@ await test('release closure requires the pinned Bash payload and refuses a Power
     const result = run(root)
     assert.notEqual(result.status, 0, JSON.stringify(changed.optionalDependencies))
     assert.match(result.out, /must remain the pinned|must be optional|must not be a package dependency|only @dsh-ops optional payload/)
+  }
+}))
+await test('release rejects a missing, duplicated or legacy component roster', async () => withTempDir('release-roster', root => {
+  fixture(root)
+  const file = path.join(root, 'dsh-plugin.json'), manifest = JSON.parse(fs.readFileSync(file, 'utf8'))
+  const merged = manifest.contributes['x-components'][0]
+  for (const components of [[], [merged, merged], [{ ...merged, id: 'dsh-ops-mode-ptc' }]]) {
+    manifest.contributes['x-components'] = components
+    fs.writeFileSync(file, JSON.stringify(manifest))
+    const result = run(root)
+    assert.notEqual(result.status, 0)
+    assert.match(result.out, /exactly the merged dsh-ops component/)
+  }
+}))
+await test('IPC binary and source tampering fail the release closure', async () => withTempDir('release-ipc-tamper', root => {
+  fixture(root)
+  for (const relative of ['runtime/win32-x64/bash-ipc/opsipc.dll', 'native/bash-ipc/opsnt.cpp']) {
+    const file = path.join(root, relative), original = fs.readFileSync(file)
+    fs.appendFileSync(file, 'tampered')
+    const result = run(root)
+    assert.notEqual(result.status, 0)
+    assert.match(result.out, /IPC hash mismatch|IPC source mismatch/)
+    fs.writeFileSync(file, original)
   }
 }))
 report('release-scope')

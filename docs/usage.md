@@ -7,24 +7,27 @@ for stopping the host, registry-policy failures and the 0.4.x-to-0.5.x migration
 
 ## 0.4.3 local candidate and component defaults
 
-This checkout is an unreleased candidate. The bundle declares eight component rows: four enhanced
-built-in preset modes (`dsh-ops/mode-minimal`, `dsh-ops/mode-standard`, `dsh-ops/mode-ptc`,
-`dsh-ops/mode-cordis`), dynamic loading (`dsh-ops/discovery`), Compatibility mode
-(`dsh-ops/compat`), data inspection (`dsh-ops/panel`) and TUI integration (`dsh-ops/tui`).
-Fresh profiles enable the four mode rows and discovery; Compatibility, panel and TUI stay off.
-Existing explicit switches survive upgrade, but a saved override for a removed `shell`, `file`,
-`ptc` or `hide-official` row must be deleted; it matches no row in the new bundle.
+Native file paths (including copy/move destinations), omitted search paths and Bash's default or
+relative `workdir` follow the live `working_directory` service. Each call resolves its base once;
+`resolvedFrom` and `cwdSource` identify that base in structured and rendered file/Bash results
+(credential refusals remain path-free).
+Hosts without this service fall back to `session.header.cwd` and label that source. Service errors
+or cancellation stop the call rather than silently using an old directory. Changing cwd never
+widens `sandboxPolicy.workspaceRoot` write authority. Native `ops_result` defaults to the live cwd;
+after changing directories, pass the original returned `referenceRoot` as `root` to page or release
+an older reference. PTC's explicit/default workspace-root contract is unchanged.
 
-A mode row publishes OPS tools only for sessions composed from its preset and hides the official
-tools it replaces: `read`, `glob` and `grep` in Standard and Cordis, and the Windows official
-shell (`pwsh`/`pwsh_persistent` → `ops_bash`) in every enabled mode. Hiding only happens while
-the OPS counterpart is visible in the same scope. Compatibility mode keeps the official tools
-exposed without unloading a row. Standard and Cordis publish the resident OPS file tools, Minimal
-sessions receive the dynamic-loading entry while the discovery row is enabled, and PTC mode
-publishes its 18-API typed catalogue with its own configured pool and SDK loader; documents load on
-demand.
-[Configuration](configuration-reference.md) describes the built-in forms and the optional browser
-carrier. Use the [upgrade notes](upgrading.md#moving-from-04x-to-05x) for migration details.
+This checkout is an unreleased candidate. The bundle declares one enabled `dsh-ops` row. Its
+built-in preset consumers, explicit `presets` map, Native discovery, panel, TUI and companion link
+are configured on the same page. Panel and TUI start off. Migrate saved legacy-row values into
+this row before removing obsolete overrides; OPS does not rewrite profiles automatically.
+
+Standard and Cordis publish resident Native tools; Minimal has no file baseline; PTC publishes
+typed APIs with a separate SDK loader. Residency, dynamic loading, Bash, file replacement and
+Windows host-shell hiding are independently controlled. Global gates preserve saved per-preset
+intent. Explicit consumers use the same assembler; unlisted presets remain unchanged.
+[Configuration](configuration-reference.md) describes native Switch controls and exact custom ids;
+see the [upgrade notes](upgrading.md#moving-from-04x-to-05x) for migration.
 
 
 ---
@@ -54,14 +57,11 @@ node bin/native-runtime.mjs stage --platform darwin-arm64
 node bin/native-runtime.mjs stage --platform darwin-x64
 ```
 
-Then point a mode row at a bash the machine already has:
+Then set the single row's built-in section to a Bash the machine already has:
 
 ```yaml
-- id: dsh-ops-mode-standard
-  name: dsh-ops/mode-standard
-  disabled: false
-  config:
-    bashPath: /opt/homebrew/bin/bash   # Intel Homebrew: /usr/local/bin/bash
+standard:
+  bashPath: /opt/homebrew/bin/bash   # Intel Homebrew: /usr/local/bin/bash
 ```
 
 `/bin/bash` also works. macOS 12 is not fully supported: the write path needs
@@ -96,6 +96,8 @@ dsh-ops bash-runtime remove --yes      # remove receipt-marked managed versions
 ```
 
 `git` and `managed` print an absolute `bashPath` configuration for the host config editor; they do not edit a profile or PATH. Reload the mode row after applying the selection or installing/removing its runtime. Stop running Bash jobs before removal. Removal refuses links in the managed path and preserves unmarked versions, system Git and PowerShell. `install` reuses the pinned download and checksum checks from `provision-shells --bash`; `--dry-run` makes no download or change. Windows restricted modes still require the pinned MSYS IPC compatibility match. A different Git Bash remains a full-access choice; approval never repairs an incompatible restricted runtime. Linux/macOS continue using host Bash.
+
+Windows confined calls stage a private MSYS tree under `<DSH_HOME>/dsh-ops/bash-ipc`. Identical verified payloads share a content-addressed generation across profiles using the same DSH home; separate homes remain isolated. Lifecycle locking and durable process leases protect selected runtimes, including the interval before a child starts. Automatic reclamation retains the current generation and one predecessor, plus leased, legacy or uncertain entries. `bash-runtime status` and `ladder` expose observed cache usage. To reclaim historical copies, first run `dsh-ops bash-runtime clean-cache` to preview. Stop **all** OPS hosts and Bash jobs, then run `dsh-ops bash-runtime clean-cache --yes --all-hosts-stopped` against the intended `DSH_HOME`; `--dry-run` never removes anything. Only recognized marker-owned generations are eligible; unrelated directories and linked paths are not removed. The selected generation and one predecessor remain. Removed caches are rebuilt on demand. Do not manually delete caches while any OPS host or shell may still use them.
 
 ### One-command npm installation
 
@@ -140,14 +142,10 @@ dsh --profile ops-test --dump-config-schema
 ```
 
 Use the intended package version or a packed checkout instead of `@latest` when
-testing an unpublished change. The dump must contain the eight `dsh-ops-*` rows
-(`mode-minimal`, `mode-standard`, `mode-ptc`, `mode-cordis`, `discovery`, `compat`,
-`panel`, `tui`) with no `patch: entry ... not found` diagnostic. Saved profile overrides on
-those rows remain effective; an override for a removed `shell`, `file`, `ptc` or
-`hide-official` row must be deleted. New opt-in rows remain disabled until enabled. CI's manifest validation runs the
-same public host patch composer and rejects skipped overrides, alongside each
-component's config validator. A regression removes an override target and verifies
-the resulting warning fails the gate.
+testing an unpublished change. The dump must contain the single `dsh-ops` row with no
+`patch: entry ... not found` diagnostic. Migrate values from saved obsolete row overrides into
+this row before deleting those overrides. Manifest validation checks the single-row declaration
+and its validated defaults; the real-host settings suites verify saves and reloads.
 
 ---
 
