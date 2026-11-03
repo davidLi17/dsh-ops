@@ -11,6 +11,9 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Fork: correct macOS/Linux runtime status for built-in presets and hide Windows-only installers.
+- 自用版：修正 macOS/Linux 内置预设运行环境说明，隐藏 Windows 专属安装控件。
+
 ## [0.5.0-alpha3] — 2026-10-30 — Unstable development prerelease
 
 - This unstable prerelease summarizes changes since v0.5.0-alpha2; use an isolated test environment.

@@ -294,6 +294,26 @@ await test('the status section renders only for a live row or a live bundle', as
     } finally { await view.close() }
   }
 })
+await test('POSIX status explains host shells without Windows runtime warnings or installers', async () => {
+  for (const platform of ['darwin', 'linux']) {
+    let pluginReads = 0
+    const api = defaultApi()
+    api.snapshot = async () => ok({ ...snapshot, platform, powerShell: { supported: false, guidance: '', unavailable: 'Unsupported PowerShell upgrade fixture' } })
+    const plugins = { listPlugins: async () => { pluginReads++; return [] }, installBundle: async () => { throw new Error('must not install') } }
+    const view = await mount(DiagnosticsSection, { subject: bundleSubject, t, api, plugins })
+    try {
+      assert.ok(view.container.textContent.includes(en.summaryHostShell))
+      assert.ok(view.container.textContent.includes(en.runtimeHostHelp))
+      assert.equal(view.container.textContent.includes(en.summaryNone), false)
+      assert.equal(view.container.textContent.includes('Unsupported PowerShell upgrade fixture'), false)
+      assert.deepEqual([...view.container.querySelectorAll('dt')].map(node => node.textContent), [en.statusPlatform])
+      assert.equal(view.container.querySelector(`[aria-label="${en.installPwsh7}"]`), null)
+      assert.equal([...view.container.querySelectorAll('button')].some(node => node.textContent === en.installAction), false)
+      assert.equal(pluginReads, 0)
+    } finally { await view.close() }
+  }
+})
+
 await test('the companion install previews the resolved version before running', async () => {
   const calls = []
   const api = defaultApi()

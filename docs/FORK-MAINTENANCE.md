@@ -1,5 +1,15 @@
 # davidLi17 maintenance record
 
+## 26.11.3-lhg — POSIX runtime panel
+
+- Local UI fix on `3f44d592df5478c615d36f7eb224c5076f0c13cf`, not an upstream merge.
+- Latest stable evaluated: v0.4.4 `fc11890f7668c9912fcde1df1ca89810e1cbc031`; existing equivalent fixes retained. v0.5.0-alpha4 is a prerelease and excluded.
+- Built-in presets publish OPS Bash only on Windows (`src/presets/builtin.ts`). POSIX support in the low-level resolver does not mean built-in Mac presets publish OPS Bash.
+- macOS/Linux details now explain host shell use, hide Windows inventory/install controls, and avoid probing the Windows companion plugin. Custom integration behavior is unchanged; no shell readiness is invented.
+- 自用修复：Mac/Linux 内置预设使用宿主 Shell，原面板将 Windows Bash 清单当作所有平台状态，导致误报；现隐藏无关安装项。底层 POSIX resolver 能力不等于内置预设启用 OPS Bash，自定义集成及执行权限不变。
+- Tests extend the existing UI suite only. Publication requires same-commit four-platform native artifacts, release gate, and matching package/native versions; source-only main is not an installable distribution.
+
+
 ## 26.10.31-lhg — requested 0.5 improvements
 
 Base: `ad78e2b0deee75ecb0b42b140ee7fb7146e81532` (0.4.4).

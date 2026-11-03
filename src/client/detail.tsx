@@ -45,6 +45,11 @@ const none = (t: Translator): string => t('statusNone')
 export function statusView(snapshot: RuntimeSnapshot | undefined, t: Translator): StatusView {
   const note = t('runtimeHelp')
   if (snapshot === undefined) return { summary: t('summaryNone'), facts: [], note }
+  if (snapshot.platform === 'darwin' || snapshot.platform === 'linux') return {
+    summary: t('summaryHostShell'),
+    facts: [{ label: t('statusPlatform'), value: snapshot.platform }],
+    note: t('runtimeHostHelp'),
+  }
   const managed = [...new Set(snapshot.managed.map(entry => entry.version))].join(', ')
   const facts: StatusFact[] = [
     { label: t('statusPlatform'), value: snapshot.platform },
@@ -129,7 +134,7 @@ function RuntimeStatus({ api, t, plugins }: { api: RuntimeRemote; t: Translator;
   // The companion plugin's own state: the host's plugin list is the only source.
   const [companion, setCompanion] = useState<{ state: 'unknown' | 'absent' | 'present'; version?: string }>({ state: 'unknown' })
   useEffect(() => {
-    if (plugins === undefined) return
+    if (plugins === undefined || runtime.snapshot?.platform !== 'win32') return
     let current = true
     void plugins.listPlugins().then(result => {
       if (!current) return
@@ -142,7 +147,7 @@ function RuntimeStatus({ api, t, plugins }: { api: RuntimeRemote; t: Translator;
       setCompanion(list === undefined ? { state: 'unknown' } : entry === undefined ? { state: 'absent' } : { state: 'present', version: entry.version })
     }).catch(() => { if (current) setCompanion({ state: 'unknown' }) })
     return () => { current = false }
-  }, [plugins])
+  }, [plugins, runtime.snapshot?.platform])
   const installPwsh7 = async (): Promise<void> => {
     if (plugins === undefined) return
     setInstall('running')
@@ -178,7 +183,7 @@ function RuntimeStatus({ api, t, plugins }: { api: RuntimeRemote; t: Translator;
               {view.facts.filter(fact => fact.label !== t('statusManaged')).map(fact => <div key={fact.label}>
                 <dt>{fact.label}</dt><dd>{fact.value}</dd>
               </div>)}
-              <div><dt>{t('statusManaged')}</dt><dd>{runtime.snapshot.managed.length === 0
+              {win32 && <><div><dt>{t('statusManaged')}</dt><dd>{runtime.snapshot.managed.length === 0
                 ? <>{t('statusNone')}{win32 && <button type="button" className="ops-link ops-row-action" disabled={runtime.busy}
                   onClick={() => void runtime.preview('install-bash')}>{t('installAction')}</button>}</>
                 : <>{runtime.snapshot.managed.map(entry => entry.version).join(', ')}{owned && <button type="button"
@@ -187,7 +192,7 @@ function RuntimeStatus({ api, t, plugins }: { api: RuntimeRemote; t: Translator;
               <div><dt>{t('pwsh7Plugin')}</dt><dd>{companion.state === 'present'
                 ? `${t('pwsh7Present')}${(companion.version ?? runtime.snapshot?.companion) === undefined ? '' : `（${companion.version ?? runtime.snapshot?.companion}）`}`
                 : <>{t('statusNone')}{plugins !== undefined && <button type="button" className="ops-link ops-row-action"
-                  aria-label={t('installPwsh7')} onClick={() => void openPwshPlan()}>{t('installAction')}</button>}</>}</dd></div></dl>
+                  aria-label={t('installPwsh7')} onClick={() => void openPwshPlan()}>{t('installAction')}</button>}</>}</dd></div></>}</dl>
             <p className="ops-status-note">{view.note}</p>
           </div>
         </>}
