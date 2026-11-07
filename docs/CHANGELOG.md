@@ -11,6 +11,9 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Fork 26.11.7-lhg selectively adopts stable v0.5.0 fixes for the Windows Store WSL alias, pwsh7 detection/save intent, Unicode IPC build paths and strict npm 12 pack reports. Retains fork PTC/Windows behavior, existing host range and offline profile migration. See FORK-MAINTENANCE.md for exact source commits and excluded changes.
+- 自用版 26.11.7-lhg 选择性合入正式版 v0.5.0 的 Windows Store WSL 别名、pwsh7 自动检测/保存语义、Unicode IPC 构建路径及 npm 12 严格打包报告修复。保留 PTC/Windows 定制、旧宿主范围与离线配置迁移，准确来源和排除范围见 FORK-MAINTENANCE.md。
+
 - Fork: correct macOS/Linux runtime status for built-in presets and hide Windows-only installers.
 - 自用版：修正 macOS/Linux 内置预设运行环境说明，隐藏 Windows 专属安装控件。
 

@@ -1,5 +1,29 @@
 # davidLi17 maintenance record
 
+## 26.11.7-lhg — selective stable 0.5.0 fixes
+
+Base: `ff5259819720f3c47e6450da6e0db41a7f4b6cb6`.
+Evaluated source: T-Auto/dsh-ops formal `v0.5.0`,
+`904b4faa2afab722699cba31f2aa92c5d4d0dcbe` (not a draft or prerelease).
+The source and retained fork are MIT; historical and third-party notices are unchanged.
+
+Selected fixes only:
+- `61b0e58`: exclude Windows Store's WSL Bash alias from system fallback, retaining Git Bash selection.
+- `cc6086c` (settings portion): detect pwsh7 from the owning profile, do not persist an untouched detected link, and save explicit on/off choices.
+- `9dddd15`: build Windows IPC proxies with Unicode environment paths and ASCII batch instructions, preserving existing IPC source and permissions.
+- `a12b790`: accept npm 12 package-keyed pack reports through strict identity/path validation; retain repaired tar hashes and provenance.
+
+Preserved: fork PTC/nested tools and declaration refresh, Windows drive authority,
+POSIX host-shell panel, offline migration/backup, old-host adapter, and all permissions.
+Deferred: the 0.2.2-only host migration, Niubash backend switch, new default PowerShell hiding,
+WSL delegation, indexing and unrelated publication/native changes. This remains a selective fork,
+not a complete upstream 0.5.0 installation. No workflow, dependency or security setting is changed.
+
+仅合入上述四组正式版修复，保留 PTC、Windows、POSIX 面板与离线迁移定制；
+不整体升级至要求 DSH 0.2.2 的上游架构，不替换 Niubash 后端，不自动修改用户配置。
+主包与原生版本统一，但原生实现未变；仍要求同提交四平台 Release 构建、完整 gate 和安装包核验。
+安装渠道继续使用本仓库 Actions 的 `release-dist`，不发布 npm 或 GitHub Release。
+
 ## 26.11.3-lhg — POSIX runtime panel
 
 - Local UI fix on `3f44d592df5478c615d36f7eb224c5076f0c13cf`, not an upstream merge.

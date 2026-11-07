@@ -1,6 +1,6 @@
 [package]
 name = "ops-batch"
-version = "26.11.3-lhg"
+version = "26.11.7-lhg"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"

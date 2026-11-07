@@ -1,4 +1,4 @@
-> **davidLi17 自用版 26.11.3-lhg**：基于上游 0.5.0-alpha3 的明确选定改进，不是上游正式版。请使用本仓库 Actions 的 `release-dist` 安装包，不要使用下文上游 npm 命令安装此自用版。升级前先备份并审核[配置迁移](docs/fork-migration.zh.md)；[本次来源与范围](docs/FORK-MAINTENANCE.md)。
+> **davidLi17 自用版 26.11.7-lhg**：保留既有定制，并选择性合入上游正式版 0.5.0 的四组修复；不是完整上游 0.5.0。请使用本仓库 Actions 的 `release-dist` 安装包，不要使用下文上游 npm 命令安装此自用版。升级前先备份并审核[配置迁移](docs/fork-migration.zh.md)；[本次来源与范围](docs/FORK-MAINTENANCE.md)。
 
 <p align="center">
   <img src="docs/assets/readme/dsh-ops-header.svg" alt="dsh-ops header" width="640">

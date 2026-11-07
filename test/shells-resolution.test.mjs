@@ -134,6 +134,31 @@ await test('a Windows deployment finds the well-known Git for Windows install fo
   })
 })
 
+await test('the Store WindowsApps WSL alias is skipped without losing Git Bash fallback', async () => {
+  await withTempDir('shells-store-wsl', async (dir) => {
+    const localAppData = path.join(dir, 'AppData')
+    const alias = makeExecutable(path.join(localAppData, 'Microsoft', 'WindowsApps', 'bash.exe'))
+    const programFiles = path.join(dir, 'Program Files')
+    const gitBash = makeExecutable(path.join(programFiles, 'Git', 'bin', 'bash.exe'))
+    for (const key of ['LOCALAPPDATA', 'LocalAppData']) {
+      const resolved = resolveShells(config({ allowSystemShellFallback: true }), {
+        bundleRoot: path.join(dir, 'plugin'),
+        env: { DSH_HOME: TEST_HOME, PATH: path.dirname(alias), [key]: localAppData, ProgramFiles: programFiles },
+        platform: 'win32', arch: 'x64',
+      })
+      assert.notEqual(resolved.bash.file, alias)
+      assert.equal(resolved.bash.file, gitBash)
+      assert.equal(resolved.bash.source, 'well-known')
+    }
+    const absent = resolveShells(config({ allowSystemShellFallback: true }), {
+      bundleRoot: path.join(dir, 'plugin'),
+      env: { DSH_HOME: TEST_HOME, PATH: path.dirname(alias), LOCALAPPDATA: localAppData, ProgramFiles: path.join(dir, 'absent') },
+      platform: 'win32', arch: 'x64',
+    })
+    assert.equal(absent.bash.available, false)
+  })
+})
+
 await test('the System32 WSL launcher is skipped even when it is first on PATH', async () => {
   await withTempDir('shells-wsl', async (dir) => {
     const systemRoot = path.join(dir, 'Windows')
