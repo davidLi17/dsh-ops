@@ -23,6 +23,7 @@ import {
   shellExecutable,
   shellUpstreamPin,
 } from '../lib/shells.js'
+import { fromPath, isWslBashLauncher } from '../lib/shells/paths.js'
 import { assert, TEST_HOME, report, test, withTempDir } from './lib/harness.mjs'
 import {
   config,
@@ -150,12 +151,12 @@ await test('the Store WindowsApps WSL alias is skipped without losing Git Bash f
       assert.equal(resolved.bash.file, gitBash)
       assert.equal(resolved.bash.source, 'well-known')
     }
-    const absent = resolveShells(config({ allowSystemShellFallback: true }), {
-      bundleRoot: path.join(dir, 'plugin'),
-      env: { DSH_HOME: TEST_HOME, PATH: path.dirname(alias), LOCALAPPDATA: localAppData, ProgramFiles: path.join(dir, 'absent') },
-      platform: 'win32', arch: 'x64',
-    })
-    assert.equal(absent.bash.available, false)
+    // Inspect only this PATH, not the runner's legitimate well-known MSYS installs.
+    const env = { LOCALAPPDATA: localAppData }
+    assert.equal(fromPath({
+      names: ['bash.exe'], pathValue: path.dirname(alias),
+      reject: file => isWslBashLauncher(file, env, 'win32'),
+    }), undefined)
   })
 })
 
