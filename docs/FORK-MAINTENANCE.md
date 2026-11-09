@@ -1,11 +1,16 @@
 # davidLi17 maintenance record
 
-## 26.11.7-lhg — selective stable 0.5.0 fixes
+## 26.11.9-lhg — selective stable 0.5.0 fixes
 
 Base: `ff5259819720f3c47e6450da6e0db41a7f4b6cb6`.
 Evaluated source: T-Auto/dsh-ops formal `v0.5.0`,
 `904b4faa2afab722699cba31f2aa92c5d4d0dcbe` (not a draft or prerelease).
 The source and retained fork are MIT; historical and third-party notices are unchanged.
+
+The 26.11.7 candidate was never published; this release continues its commits without rewriting them.
+The release-only manifest now removes the source-checkout prepack hook, so DSH can repack compiled
+artifacts normally without missing build scripts. Source-checkout builds and integrity checks remain enabled.
+此版继续未发布的 11 月 7 日候选；成品清单移除仅用于源码构建的 prepack，避免 DSH 安装时重新打包失败，不关闭脚本策略或供应链校验。
 
 Selected fixes only:
 - `61b0e58`: exclude Windows Store's WSL Bash alias from system fallback, retaining Git Bash selection.

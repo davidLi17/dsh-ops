@@ -47,6 +47,16 @@ export function printInjection(context) {
   console.log('  (+ is the Windows bash payload; the main package declares the same pin)\n')
 }
 
+/** Prepare an already-built release manifest without a checkout-only lifecycle hook. */
+export function releaseManifest(manifest, optionalDependencies) {
+  const publishable = { ...manifest, optionalDependencies, scripts: { ...manifest.scripts } }
+  // The release has compiled lib/ but intentionally excludes src/ and scripts/.
+  // DSH may repack an extracted distribution; it must not invoke the checkout compiler.
+  delete publishable.scripts.prepack
+  delete publishable.private
+  return publishable
+}
+
 /**
  * Build the publish directory: the main package's exact published content plus
  * the injected platform dependencies, then pack it.
@@ -78,11 +88,7 @@ export async function stepPublishDir(context, assembled) {
     throw new Error(`the files whitelist names ${uncovered.join(', ')}, which npm would not publish`)
   }
 
-  const publishable = { ...manifest, optionalDependencies: injectedOptionalDependencies(context) }
-  // `private: true` guards the checkout against an accidental publish; this
-  // directory is the artifact that is meant to be published, so the flag does
-  // not travel with it (npm refuses a tarball whose manifest is private).
-  delete publishable.private
+  const publishable = releaseManifest(manifest, injectedOptionalDependencies(context))
   writeJson(path.join(directory, 'package.json'), publishable)
   const packed = await packDirectory(directory, context.dist)
   log('publish-dir', `${path.relative(REPO_ROOT, directory)}: ${listed.length} files copied, tarball ${packed.tarball} `

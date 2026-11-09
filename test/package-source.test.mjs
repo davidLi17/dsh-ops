@@ -2,7 +2,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { assert, test, report, PACKAGE_ROOT } from './lib/harness.mjs'
+import { assert, test, report, PACKAGE_ROOT, withTempDir } from './lib/harness.mjs'
+import { releaseManifest } from '../scripts/lib/build/publish-dir.js'
 import { parseNpmPackReport } from '../scripts/lib/build/util.js'
 
 await test('npm pack includes compiled host code and native sources, never host sources or build caches', () => {
@@ -70,4 +71,21 @@ await test('npm pack includes compiled host code and native sources, never host 
     }
   }
 })
+await test('built release can be repacked with lifecycle scripts enabled without checkout sources', async () => withTempDir('release-repack', root => {
+  const source = { name: 'dsh-ops', version: '1.0.0', private: true,
+    scripts: { prepack: 'node missing-checkout-build.mjs' }, files: ['lib'] }
+  const manifest = releaseManifest(source, {})
+  assert.equal(source.scripts.prepack, 'node missing-checkout-build.mjs')
+  assert.equal(manifest.scripts.prepack, undefined)
+  assert.equal(manifest.private, undefined)
+  fs.mkdirSync(path.join(root, 'lib'))
+  fs.writeFileSync(path.join(root, 'lib/index.js'), 'export const ready = true\n')
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(manifest))
+  const result = spawnSync(process.platform === 'win32' ? 'cmd.exe' : 'npm',
+    process.platform === 'win32' ? ['/d', '/s', '/c', 'npm.cmd pack --json --ignore-scripts=false'] : ['pack', '--json', '--ignore-scripts=false'],
+    { cwd: root, encoding: 'utf8', timeout: 30000 })
+  assert.equal(result.status, 0, result.stderr)
+  const entry = parseNpmPackReport(result.stdout, 'built release repack', manifest)
+  assert.ok(entry.files.some(file => file.path === 'lib/index.js'))
+}))
 report('package-source')
