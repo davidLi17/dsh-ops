@@ -1,5 +1,34 @@
 # davidLi17 maintenance record
 
+## 26.11.10-lhg.2 — validate the DSH 0.2.2-rc.1 executor split
+
+Base: `c9881faa4f1920163a63e03a8a727516fbf40909`. Host source:
+DeepSeek Harness `v0.2.2-rc.1`, `66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db`.
+The published rc.1 graph uses Cordis 4.1.0, scoped Native/PTC executor plugins,
+batch `tools.execute`, public `tools.definitions`, and the working-directory service.
+OPS registers capabilities; it does not implement or shim the host batch executor.
+
+Use public lossless definitions on rc.1, with stable per-definition cache identities,
+without reading its private registry view or copying schemas. Older hosts retain their
+existing fast view path and fallback. Add a regression that fails on the old path.
+Admit exactly rc.1 alongside the previously supported bounded range. Do not claim
+compatibility with untested 0.2.2 release candidates or stable releases.
+
+新增公开工具 definitions 适配与独立真实 rc.1 安装 gate，保留旧宿主、PTC、
+Windows 盘符权限、Bash 路径持久化、现有运行后端、配置和离线迁移，不改工作流。
+
+`test/compat/host-rc1.mjs` drives the installed candidate through real Session,
+Native/PTC batch executors, Node PTC processes, workingDirectory, subprocess and native worker.
+It checks Native reads and ordered failures, scoped next-step discovery, typed nested PTC
+reads/copies, SDK loading, cancellation, executor withdrawal, stale callbacks and metadata.
+The locked old-host graph remains unchanged for regression CI. The rc.1 gate has its own
+isolated published graph, so it cannot accidentally test against the old peer graph.
+
+Promotion requires successful same-commit CI, four freshly built platform runtimes,
+release closure/manifest checks and actual packed installation with the rc.1 integration gate.
+Use existing Actions branch dispatch artifacts only; no npm or GitHub Release publication.
+Linux host integration is not a claim that the user's desktop was changed or tested.
+
 ## 26.11.10-lhg — preserve per-mode Bash path edits
 
 Base: `dfa85e1437daa801286357657c0369e36cf01fd8`.

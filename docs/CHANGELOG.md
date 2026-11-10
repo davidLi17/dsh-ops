@@ -11,6 +11,9 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Fork 26.11.10-lhg.2: adapt the tool-surface reader to DSH 0.2.2-rc.1 public definitions, retain older hosts, and add installed-host Native/PTC batch-executor regression coverage.
+- 自用版 26.11.10-lhg.2：适配 DSH 0.2.2-rc.1 公开工具 definitions，保留旧宿主兼容，增加真实安装宿主 Native/PTC 批量执行器验证。
+
 - Fork 26.11.10-lhg: allow the host settings writer to save and clear each preset mode’s explicit Bash path while retaining other switches, selectively from stable v0.5.2.
 - 自用版 26.11.10-lhg：选择性合入正式版 v0.5.2 的设置描述修复，宿主写入器可以保存、清除各模式显式 Bash 路径，同时保留其它开关。
 

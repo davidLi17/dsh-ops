@@ -123,7 +123,7 @@ The ordinary DSH CLI cannot manage the reserved `desktop` profile; do not confus
 
 ### Host compatibility and display metadata
 
-The package declares the bounded DSH compatibility range `>=0.2.0-rc.2 <0.2.2-0` in both `engines.dsh` and the legacy DSH peer dependency. This includes `0.2.0-rc.2`, `0.2.1-rc.2`, `0.2.1-rc.3`, `0.2.1-rc.4` and the `0.2.1` stable line, while rejecting `0.2.0-rc.1`, `0.2.2` prereleases and `0.3.0`. The rc4 host graph is validated separately in the isolated host matrix; the plugin's native adapter preserves the existing Cordis tool, prompt, policy, subprocess, PTC and UI behavior.
+The package declares the bounded DSH compatibility range `>=0.2.0-rc.2 <0.2.2-0 || =0.2.2-rc.1` in both `engines.dsh` and the legacy DSH peer dependency. This includes `0.2.0-rc.2`, `0.2.1-rc.2`, `0.2.1-rc.3`, `0.2.1-rc.4` and the `0.2.1` stable line, while rejecting `0.2.0-rc.1`, unverified `0.2.2-rc.2`, `0.2.2` stable and `0.3.0`. The rc4 host graph is validated separately in the isolated host matrix; the plugin's native adapter preserves the existing Cordis tool, prompt, policy, subprocess, PTC and UI behavior.
 
 The bundle icon comes from the root manifest. Each component exports its own
 `dsh-ops/<component>/icon` and `locale/*.json`; DSH 0.2.1 does not use a component's
@@ -304,3 +304,9 @@ read range instead of advancing past undisplayed text. A truncated line cannot b
 recovered by moving to the next line: use hex byte rows. A clipped mutation receipt
 is not permission to repeat a write: inspect current state first. Error notices
 show effect state and retry guidance before potentially long diagnostic messages.
+
+### DSH 0.2.2-rc.1
+
+This fork additionally admits exactly `0.2.2-rc.1`, not unverified later 0.2.2 builds. That host separates Native/PTC executors. OPS reads its public `definitions()` capability surface, preserving the older-host fallback. The host/preset continues to select the executor; OPS does not rewrite that selection or authority.
+
+After installing rc.1 and the candidate OPS in an isolated prefix, run `DSH_OPS_WORKER_BIN=/absolute/verified-worker npm run test:host-rc1 -- /host/prefix`. This gate uses real Session, Native/PTC batch executors, Node PTC, workingDirectory, subprocess and the Rust worker. It covers next-step discovery/SDK admission, nested file operations, cancellation, revocation and unload. Existing four-platform CI/Release remains responsible for native Windows drive and platform behavior; a Linux run is not a Windows/macOS native validation.

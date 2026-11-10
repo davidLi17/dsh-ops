@@ -1,4 +1,4 @@
-> **davidLi17 自用版 26.11.10-lhg**：保留既有定制，选择性合入正式版 v0.5.2 的各模式 Bash 路径设置修复，并非完整升级上游。请使用本仓库 Actions 的 `release-dist` 安装包，不要使用下文上游 npm 命令安装此自用版。升级前先备份并审核[配置迁移](docs/fork-migration.zh.md)；[本次来源与范围](docs/FORK-MAINTENANCE.md)。
+> **davidLi17 自用版 26.11.10-lhg.2**：新增 DSH 0.2.2-rc.1 真实 Native/PTC 宿主适配与验证，保留既有定制，选择性合入正式版 v0.5.2 的各模式 Bash 路径设置修复，并非完整升级上游。请使用本仓库 Actions 的 `release-dist` 安装包，不要使用下文上游 npm 命令安装此自用版。升级前先备份并审核[配置迁移](docs/fork-migration.zh.md)；[本次来源与范围](docs/FORK-MAINTENANCE.md)。
 
 <p align="center">
   <img src="docs/assets/readme/dsh-ops-header.svg" alt="dsh-ops 表头" width="640">

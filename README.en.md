@@ -1,4 +1,4 @@
-> **davidLi17 fork 26.11.10-lhg**: preserve the existing customizations and selectively adopt the stable v0.5.2 per-mode Bash-path settings fix. This is not a complete upstream upgrade. Install from this repository’s Actions `release-dist` artifact, not the upstream npm commands below. Review the [offline migration](docs/fork-migration.en.md) and [maintenance record](docs/FORK-MAINTENANCE.md) first.
+> **davidLi17 fork 26.11.10-lhg.2**: add DSH 0.2.2-rc.1 Native/PTC host adaptation and validation; preserve the existing customizations and selectively adopt the stable v0.5.2 per-mode Bash-path settings fix. This is not a complete upstream upgrade. Install from this repository’s Actions `release-dist` artifact, not the upstream npm commands below. Review the [offline migration](docs/fork-migration.en.md) and [maintenance record](docs/FORK-MAINTENANCE.md) first.
 
 <p align="center">
   <img src="docs/assets/readme/dsh-ops-header.svg" alt="dsh-ops header" width="640">

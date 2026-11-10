@@ -1,6 +1,6 @@
 [package]
 name = "dsh-ops-windows-metadata"
-version = "26.11.10-lhg"
+version = "26.11.10-lhg.2"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"

@@ -92,7 +92,7 @@ use the PTC SDK loader under the host's `run_code` presentation. Check the scope
 assembled tools and presentation, not just a global registry or a prompt section
 name. An empty discovery section alone does not identify the cause.
 
-Host support declarations and component resource exports are covered by the current adapter boundary. The package declares and tests the bounded range `>=0.2.0-rc.2 <0.2.2-0`, including rc2, rc3, rc4 and the 0.2.1 stable line; the isolated host matrix compares the rc4 graph against the locked rc2 control. The text-only PTC hook adaptation is not used as the sole compatibility proof.
+Host support declarations and component resource exports are covered by the current adapter boundary. The package declares and tests the bounded range `>=0.2.0-rc.2 <0.2.2-0 || =0.2.2-rc.1`, including rc2, rc3, rc4 and the 0.2.1 stable line; the isolated host matrix compares the rc4 graph against the locked rc2 control. The text-only PTC hook adaptation is not used as the sole compatibility proof.
 
 The original #346 report also describes an enabled row and a stalled publication
 chain. The profile checks above do not prove that failure fixed. If the row is
@@ -100,3 +100,9 @@ enabled and the expected scoped tool remains absent, capture a minimal profile,
 exact versions, Native/PTC mode, affected scoped schemas, and a timed lifecycle
 trace showing the pending publication. Restart/new-session results are useful
 comparisons, not proof that an indefinite hot-mount stall cannot recur.
+
+### DSH 0.2.2-rc.1
+
+This fork additionally admits exactly `0.2.2-rc.1`, not unverified later 0.2.2 builds. That host separates Native/PTC executors. OPS reads its public `definitions()` capability surface, preserving the older-host fallback. The host/preset continues to select the executor; OPS does not rewrite that selection or authority.
+
+After installing rc.1 and the candidate OPS in an isolated prefix, run `DSH_OPS_WORKER_BIN=/absolute/verified-worker npm run test:host-rc1 -- /host/prefix`. This gate uses real Session, Native/PTC batch executors, Node PTC, workingDirectory, subprocess and the Rust worker. It covers next-step discovery/SDK admission, nested file operations, cancellation, revocation and unload. Existing four-platform CI/Release remains responsible for native Windows drive and platform behavior; a Linux run is not a Windows/macOS native validation.

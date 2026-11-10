@@ -16,7 +16,7 @@ import { createScope } from '@deepseek-ai/dsh-scope'
 import { bootHost, shutdown } from './lib/host.mjs'
 import { assert, test, report, waitFor } from './lib/harness.mjs'
 import { applyComponent } from '../lib/index.js'
-import { visibleNames } from '../lib/surface.js'
+import { surfaceOf, visibleNames } from '../lib/surface.js'
 
 /** A registered tool whose schema is big enough that a deep copy is measurable. */
 const tool = name => ({
@@ -32,6 +32,21 @@ const tool = name => ({
   },
   output: { schema: { type: 'object', properties: { ok: { type: 'boolean' } } }, render: () => [] },
   execute: async () => ({ content: 'ok' })
+})
+
+await test('public definition reads preserve identity without private views or projections', () => {
+  const key = {}, first = tool('alpha'), second = tool('alpha')
+  let selected = first
+  const registry = {
+    definitions(scope) { assert.equal(scope, key); return [selected] },
+    view() { throw new Error('public-host path must not read private view') },
+    schemas() { throw new Error('public-host path must not copy schemas') },
+  }
+  assert.deepEqual(visibleNames(registry, key), ['alpha'])
+  const before = surfaceOf(registry, key)
+  assert.equal(surfaceOf(registry, key), before)
+  selected = second
+  assert.notEqual(surfaceOf(registry, key), before, 'same-name replacement invalidates the cache')
 })
 
 await test('a name-only read does not project schemas', () => withRegistry(async ({ tools, key, calls }) => {

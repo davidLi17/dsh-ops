@@ -17,6 +17,7 @@ interface ScopeView {
     keys?: () => Iterable<string>
   }
 }
+type Definitions = { definitions?: (scope?: object) => readonly { name: string }[] }
 type Viewable = { view?: (scope?: object) => ScopeView | undefined }
 
 /** Stable per-definition identities, so a swapped definition cannot reuse its predecessor's. */
@@ -67,6 +68,10 @@ const identityOf = (definition: unknown): number => {
  * @returns per-entry `name\u0001identity` joined by NUL, usable as a memo key.
  */
 export const surfaceOf = (tools: Pick<ToolRuntime, 'schemas'>, agent: Agent): string => {
+  // DSH 0.2.2 exposes lossless definitions publicly. Keep identity without
+  // depending on its private view or paying for schema projection.
+  const definitions = (tools as unknown as Definitions).definitions?.(agent)
+  if (definitions) return definitions.map(definition => `${definition.name}\u0001${identityOf(definition)}`).join('\u0000')
   // Duck-typed rather than `instanceof Map`: a host may serve the view through a subclass
   // or a proxy, and a failed instanceof would silently take the expensive branch forever.
   const visible = (tools as unknown as Viewable).view?.(agent)?.visible
@@ -107,6 +112,8 @@ export const surfaceNames = (surface: string): string[] =>
  * @returns the visible tool names, in view order.
  */
 export const visibleNames = (tools: Pick<ToolRuntime, 'schemas'>, scope?: object): string[] => {
+  const definitions = (tools as unknown as Definitions).definitions?.(scope)
+  if (definitions) return definitions.map(definition => definition.name)
   const visible = (tools as unknown as Viewable).view?.(scope)?.visible
   if (typeof visible?.keys === 'function') return [...visible.keys()]
   return tools.schemas(scope as Agent).map(schema => schema.name)
