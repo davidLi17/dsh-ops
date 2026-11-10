@@ -1,5 +1,29 @@
 # davidLi17 maintenance record
 
+## 26.11.10-lhg — preserve per-mode Bash path edits
+
+Base: `dfa85e1437daa801286357657c0369e36cf01fd8`.
+Evaluated source: T-Auto/dsh-ops formal `v0.5.2`,
+`fa997b81d9088e11427b9aec5eb6a46b26671cd9` (not a draft or prerelease).
+The source and retained fork are MIT; historical and third-party notices are unchanged.
+
+Select only the `src/settings/merged.ts` Bash-path descriptor fix: the real host settings
+writer can now persist and clear `bashPath` for Minimal, Standard, PTC and Cordis without
+changing other saved switches. The regression uses this fork's pinned host writer directly;
+it does not import the newer Niubash executor-selection UI or claim that UI is present.
+The new assertion fails before the fix with `Config field "minimal.bashPath" is not volatile`.
+
+仅合入正式版 v0.5.2 的每模式 `bashPath` 设置描述修复，使宿主设置写入器能够保存和清除路径，
+保留其它开关及已有配置；不引入上游新版 Niubash 选择界面，不自动修改已安装配置。
+
+Preserved: fork PTC/nested tools and schema optimizations, Windows drive authority,
+POSIX host-shell panel, offline migration/backup, existing host adapter and permissions.
+Deferred: v0.5.1/v0.5.2 Niubash hardlink/cache changes (the fork still uses its existing backend),
+new indexing/definitions tools, the 0.2.2-only host migration and unrelated workflow changes.
+Native implementation and dependencies are unchanged. Package and native version declarations
+remain aligned; promotion requires same-commit four-platform Release artifacts, CI and actual
+packed-install verification. Use Actions `release-dist`; do not publish npm or a GitHub Release.
+
 ## 26.11.9-lhg — selective stable 0.5.0 fixes
 
 Base: `ff5259819720f3c47e6450da6e0db41a7f4b6cb6`.

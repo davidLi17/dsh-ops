@@ -1,6 +1,6 @@
 [package]
 name = "dsh-ops-darwin-metadata"
-version = "26.11.9-lhg"
+version = "26.11.10-lhg"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"

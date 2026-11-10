@@ -1,6 +1,6 @@
 {
   "name": "dsh-ops",
-  "version": "26.11.9-lhg",
+  "version": "26.11.10-lhg",
   "publishConfig": {
     "access": "public"
   },

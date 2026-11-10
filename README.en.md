@@ -1,4 +1,4 @@
-> **davidLi17 自用版 26.11.9-lhg**：保留既有定制，并选择性合入上游正式版 0.5.0 的四组修复；不是完整上游 0.5.0。请使用本仓库 Actions 的 `release-dist` 安装包，不要使用下文上游 npm 命令安装此自用版。升级前先备份并审核[配置迁移](docs/fork-migration.zh.md)；[本次来源与范围](docs/FORK-MAINTENANCE.md)。
+> **davidLi17 fork 26.11.10-lhg**: preserve the existing customizations and selectively adopt the stable v0.5.2 per-mode Bash-path settings fix. This is not a complete upstream upgrade. Install from this repository’s Actions `release-dist` artifact, not the upstream npm commands below. Review the [offline migration](docs/fork-migration.en.md) and [maintenance record](docs/FORK-MAINTENANCE.md) first.
 
 <p align="center">
   <img src="docs/assets/readme/dsh-ops-header.svg" alt="dsh-ops header" width="640">
