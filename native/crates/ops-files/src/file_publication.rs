@@ -131,7 +131,7 @@ mod tests {
         }).unwrap_err();
         assert_eq!(error.code, "REVISION_CONFLICT");
         assert_eq!(error.message, "held");
-        assert_eq!(error.effect_state, "none");
+        assert_eq!(error.effect_state, "none".into());
         assert_eq!(std::fs::read_to_string(root.join("target.txt")).unwrap(), "unchanged");
         assert!(!root.join(name).exists(), "do not recreate a lock after a refusal");
         drop(holder);
