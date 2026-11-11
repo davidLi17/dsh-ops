@@ -1,5 +1,29 @@
 # davidLi17 maintenance record
 
+## 26.11.11-lhg — classify a disappearing Unix update lock
+
+Base: `61f53eac6f79404866d1691ca156bd32a3155aaf`. Local correctness fix,
+not an upstream merge. Latest formal upstream remains v0.5.2
+`fa997b81d9088e11427b9aec5eb6a46b26671cd9`; the reviewed host remains
+DSH 0.2.2-rc.1 `66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db`.
+
+A finishing writer may unlink its sidecar between another writer's exclusive-create
+EEXIST and fallback open. Report REVISION_CONFLICT for that specific ENOENT rather
+than claiming the user's target is NOT_FOUND. Other I/O errors retain their existing
+classification, no symlink is followed, and no business write is retried.
+A deterministic regression removes the sidecar in that exact interval while the
+prior holder still owns its lock; it asserts refusal, unchanged target bytes and no
+sidecar recreation. The real concurrent-replace suite remains unchanged.
+
+本地正确性修复：Unix 旁路锁移除竞态只报告版本冲突，不误报目标文件缺失。
+保留原有 PTC、盘符权限、schema 优化、运行后端、配置及离线迁移；不改工作流、
+依赖、账号、权限或已安装配置。主包与原生版本保持一致。
+
+Promotion still requires successful same-commit CI, all four native targets,
+release closure checks and actual installed-host integration. Candidate branches
+are not published releases. Existing Actions artifacts only; no npm or GitHub
+Release publication. Exact build/test receipts remain in the corresponding run.
+
 ## 26.11.10-lhg.2 — validate the DSH 0.2.2-rc.1 executor split
 
 Base: `c9881faa4f1920163a63e03a8a727516fbf40909`. Host source:

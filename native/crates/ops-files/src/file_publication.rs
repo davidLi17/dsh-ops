@@ -5,28 +5,8 @@ use cap_std::fs::{Dir, File, OpenOptions};
 
 pub(super) fn open_update_lock(parent: &Dir, name: &str, conflict: &str) -> Result<std::fs::File> {
     crate::file_path::validate_name(name)?;
-    #[cfg(not(windows))]
-    let _ = conflict;
     #[cfg(unix)]
-    let file = {
-        // A single validated sibling beneath an already-held no-follow directory.
-        // Avoid cap-std's emulated create/open dance under simultaneous creators.
-        let flags = rustix::fs::OFlags::RDWR | rustix::fs::OFlags::NOFOLLOW
-            | rustix::fs::OFlags::CLOEXEC | rustix::fs::OFlags::NONBLOCK;
-        // Darwin may return ENOENT to simultaneous non-exclusive O_CREAT opens.
-        // Elect one creator with O_EXCL; EEXIST selects the persistent inode.
-        // This is create-or-open, not a retry of a failed business operation.
-        let created = rustix::fs::openat(parent, name,
-            flags | rustix::fs::OFlags::CREATE | rustix::fs::OFlags::EXCL,
-            rustix::fs::Mode::RUSR | rustix::fs::Mode::WUSR);
-        let fd = match created {
-            Ok(fd) => fd,
-            Err(rustix::io::Errno::EXIST) => rustix::fs::openat(parent, name, flags, rustix::fs::Mode::empty())
-                .map_err(|error| Failure::from(std::io::Error::from(error)))?,
-            Err(error) => return Err(Failure::from(std::io::Error::from(error))),
-        };
-        File::from_std(std::fs::File::from(fd))
-    };
+    let file = File::from_std(open_unix_update_lock_with(parent, name, conflict, || {})?);
     #[cfg(windows)]
     let file = parent
         .open_with(
@@ -40,6 +20,43 @@ pub(super) fn open_update_lock(parent: &Dir, name: &str, conflict: &str) -> Resu
         .map_err(|error| lock_failure(error, conflict))?;
     crate::file_path::regular(&file.metadata()?, false)?;
     Ok(file.into_std())
+}
+
+/// Elect one creator, or open the current sidecar without following symlinks.
+/// The hook permits a deterministic finishing-holder interleaving in the test;
+/// production never changes the sidecar between these two opens itself.
+#[cfg(unix)]
+fn open_unix_update_lock_with(
+    parent: &Dir,
+    name: &str,
+    conflict: &str,
+    before_open_existing: impl FnOnce(),
+) -> Result<std::fs::File> {
+    let flags = rustix::fs::OFlags::RDWR | rustix::fs::OFlags::NOFOLLOW
+        | rustix::fs::OFlags::CLOEXEC | rustix::fs::OFlags::NONBLOCK;
+    // Darwin may return ENOENT to simultaneous non-exclusive O_CREAT opens.
+    // Keep the exclusive create-or-open sequence; do not retry a business write.
+    let created = rustix::fs::openat(parent, name,
+        flags | rustix::fs::OFlags::CREATE | rustix::fs::OFlags::EXCL,
+        rustix::fs::Mode::RUSR | rustix::fs::Mode::WUSR);
+    let fd = match created {
+        Ok(fd) => fd,
+        Err(rustix::io::Errno::EXIST) => {
+            before_open_existing();
+            rustix::fs::openat(parent, name, flags, rustix::fs::Mode::empty())
+                .map_err(|error| {
+                    // The prior holder may unlink its sidecar after our EEXIST.
+                    // Only the lock name disappeared: the target is not missing.
+                    if error == rustix::io::Errno::NOENT {
+                        Failure::new("REVISION_CONFLICT", conflict)
+                    } else {
+                        Failure::from(std::io::Error::from(error))
+                    }
+                })?
+        }
+        Err(error) => return Err(Failure::from(std::io::Error::from(error))),
+    };
+    Ok(std::fs::File::from(fd))
 }
 
 pub(super) fn lock_error(error: std::io::Error, conflict: &str) -> Failure {
@@ -97,6 +114,31 @@ pub fn authorize_write(request: &Request, raw: &str) -> Result<PathBuf> {
 mod tests {
     use super::*;
     use fs2::FileExt;
+    #[cfg(unix)]
+    #[test]
+    fn disappearing_existing_sidecar_is_contention_not_a_missing_target() {
+        let root = std::fs::canonicalize(std::env::temp_dir()).unwrap()
+            .join(format!("ops-lock-unlink-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir(&root).unwrap();
+        let parent = Dir::open_ambient_dir(&root, cap_std::ambient_authority()).unwrap();
+        let name = ".dsh-ops-lock-test.lock";
+        std::fs::write(root.join("target.txt"), "unchanged").unwrap();
+        let holder = open_update_lock(&parent, name, "held").unwrap();
+        FileExt::try_lock_exclusive(&holder).unwrap();
+        let error = open_unix_update_lock_with(&parent, name, "held", || {
+            // Exactly the prior holder's unlink-before-unlock release window.
+            parent.remove_file(name).unwrap();
+        }).unwrap_err();
+        assert_eq!(error.code, "REVISION_CONFLICT");
+        assert_eq!(error.message, "held");
+        assert_eq!(error.effect_state, "none");
+        assert_eq!(std::fs::read_to_string(root.join("target.txt")).unwrap(), "unchanged");
+        assert!(!root.join(name).exists(), "do not recreate a lock after a refusal");
+        drop(holder);
+        drop(parent);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     #[test]
     fn simultaneous_lock_creators_keep_one_live_inode() {
         let root = std::fs::canonicalize(std::env::temp_dir()).unwrap().join(format!("ops-lock-test-{}", uuid::Uuid::new_v4()));

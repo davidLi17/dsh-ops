@@ -1,6 +1,6 @@
 [package]
 name = "ops-search"
-version = "26.11.10-lhg.2"
+version = "26.11.11-lhg"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"

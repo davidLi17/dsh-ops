@@ -11,6 +11,9 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Fork 26.11.11-lhg: classify a Unix update-lock sidecar disappearing between exclusive create and reopen as revision contention, preserving the target and no-follow checks without retrying the write.
+- 自用版 26.11.11-lhg：Unix 更新锁旁路文件在排他创建与重新打开之间被前一写入者移除时，准确报告版本冲突；目标文件与 no-follow 检查保持不变，不重试写入。
+
 - Fork 26.11.10-lhg.2: adapt the tool-surface reader to DSH 0.2.2-rc.1 public definitions, retain older hosts, and add installed-host Native/PTC batch-executor regression coverage.
 - 自用版 26.11.10-lhg.2：适配 DSH 0.2.2-rc.1 公开工具 definitions，保留旧宿主兼容，增加真实安装宿主 Native/PTC 批量执行器验证。
 
