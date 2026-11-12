@@ -11,6 +11,9 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Fork 26.11.12-lhg: resolve scope helpers from the running host when profile hoists or linked checkouts shadow its module instance, selectively from stable v0.5.3. Scope validation and all existing Native/PTC contracts remain intact. Add exact DSH 0.2.2-rc.2 compatibility with a separate real source-built host gate.
+- 自用版 26.11.12-lhg：选择性合入正式版 v0.5.3 的宿主 scope 模块来源修复，避免 profile 提升依赖或 link 检出解析到第二份实例；保留作用域校验及 Native/PTC 契约；用独立真实源码宿主 gate 验证并精确支持 DSH 0.2.2-rc.2。
+
 - Fork 26.11.11-lhg: classify a Unix update-lock sidecar disappearing between exclusive create and reopen as revision contention, preserving the target and no-follow checks without retrying the write.
 - 自用版 26.11.11-lhg：Unix 更新锁旁路文件在排他创建与重新打开之间被前一写入者移除时，准确报告版本冲突；目标文件与 no-follow 检查保持不变，不重试写入。
 
@@ -192,6 +195,9 @@ this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   refused for manual review instead of being rewritten.
 
 ## [Unreleased]
+
+- Fork 26.11.12-lhg: resolve scope helpers from the running host when profile hoists or linked checkouts shadow its module instance, selectively from stable v0.5.3. Scope validation and all existing Native/PTC contracts remain intact. Add exact DSH 0.2.2-rc.2 compatibility with a separate real source-built host gate.
+- 自用版 26.11.12-lhg：选择性合入正式版 v0.5.3 的宿主 scope 模块来源修复，避免 profile 提升依赖或 link 检出解析到第二份实例；保留作用域校验及 Native/PTC 契约；用独立真实源码宿主 gate 验证并精确支持 DSH 0.2.2-rc.2。
 
 - Let `/Prev` and `/XRefStm` be ordinary PDF dictionary keys: they mark an unsupported
   incremental update only as trailer keys, so an outline item's `/Prev` no longer makes the

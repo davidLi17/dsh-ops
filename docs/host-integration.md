@@ -106,3 +106,29 @@ comparisons, not proof that an indefinite hot-mount stall cannot recur.
 This fork additionally admits exactly `0.2.2-rc.1`, not unverified later 0.2.2 builds. That host separates Native/PTC executors. OPS reads its public `definitions()` capability surface, preserving the older-host fallback. The host/preset continues to select the executor; OPS does not rewrite that selection or authority.
 
 After installing rc.1 and the candidate OPS in an isolated prefix, run `DSH_OPS_WORKER_BIN=/absolute/verified-worker npm run test:host-rc1 -- /host/prefix`. This gate uses real Session, Native/PTC batch executors, Node PTC, workingDirectory, subprocess and the Rust worker. It covers next-step discovery/SDK admission, nested file operations, cancellation, revocation and unload. Existing four-platform CI/Release remains responsible for native Windows drive and platform behavior; a Linux run is not a Windows/macOS native validation.
+
+## Host module instances
+
+`scopeOf` and `scopeChainOf` come from `@deepseek-ai/dsh-scope`, which tags a context with
+`Symbol('dsh.scope')` and keeps ancestry in a module-private `WeakMap`. A second copy therefore reads
+nothing: `scopeOf` returns `undefined`, every ancestor lookup collapses to the key itself, and
+creating a session fails with `Publication scope must match its registration context`. Two install
+shapes can resolve such a copy: a `link:`ed development checkout resolves the copy inside that
+checkout, and a profile install can resolve a copy another bundle hoisted into the profile tree
+before the host's interception layer runs. When the bare resolution starts inside either tree, the
+adapter re-points it at the copy the host's own entry (`process.argv[1]`) resolves, falling back to
+the profile layer; every other resolution already is the host's. A re-pointed URL that names the
+same file as the bare one is left alone, so a spelling difference cannot load the file twice. No
+scope check is relaxed by that choice; the wrong copy simply never loads.
+
+
+### DSH 0.2.2-rc.2
+
+This fork also admits exactly rc.2 after testing against official source commit
+`ddac96760b6edf8fa0fe17cbdcf0b512f4c12b2c`, built with its locked workspace graph
+and native addon. The rc.2 npm graph was not published at this check, so locked
+contributor dependencies stay unchanged. Do not substitute rc.1 packages for this gate.
+With the built rc.2 graph and the actual OPS artifact installed in an isolated prefix,
+run `DSH_OPS_WORKER_BIN=/absolute/verified-worker npm run test:host-rc2 -- /host/prefix`.
+The existing integration scenarios additionally use real batched Session step publication.
+Later prereleases and stable 0.2.2 are still outside the verified compatibility range.

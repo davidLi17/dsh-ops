@@ -1,6 +1,7 @@
 /** Published DSH 0.2.2-rc.1 integration gate, against an actually installed OPS package.
  * Usage: DSH_OPS_WORKER_BIN=/absolute/worker node test/compat/host-rc1.mjs /host/prefix
- * The prefix must contain dsh-ops and the exact rc.1 host graph. No fixture rewrites APIs.
+ * The prefix must contain dsh-ops and the exact selected host graph. No fixture rewrites APIs.
+ * host-rc2.mjs selects the separately built official rc.2 graph.
  */
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -8,6 +9,8 @@ import path from 'node:path'
 import os from 'node:os'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
+const hostVersion = process.env.DSH_OPS_TEST_HOST_VERSION ?? '0.2.2-rc.1'
+assert.ok(['0.2.2-rc.1', '0.2.2-rc.2'].includes(hostVersion), 'an explicitly supported test host is required')
 const prefix = path.resolve(process.argv[2] ?? '')
 const require = createRequire(path.join(prefix, 'package.json'))
 const load = name => import(pathToFileURL(require.resolve(name)).href)
@@ -18,7 +21,7 @@ const { integration, diagnose } = await load('dsh-ops/integration')
 const pkg = require('dsh-ops/package.json')
 const worker = process.env.DSH_OPS_WORKER_BIN
 assert.ok(worker && fs.existsSync(worker), 'an explicitly verified native worker is required')
-assert.equal(boot.getDshRuntimeVersion(), '0.2.2-rc.1')
+assert.equal(boot.getDshRuntimeVersion(), hostVersion)
 assert.equal(boot.evaluatePluginCompatibility(pkg), undefined)
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ops-rc1-')))
 const previousHome = process.env.DSH_HOME
@@ -86,7 +89,9 @@ try {
     assert.equal(names(native).includes('ops_stat'), false)
     assert.deepEqual((await call(native, 'ops_discover_tools', { query: 'select:ops_stat' })).value.activated, ['ops_stat'])
     assert.equal(names(native).includes('ops_stat'), false)
-    native.session.append('step/end', { turn: 1, step: 1 })
+    if (hostVersion === '0.2.2-rc.2') {
+      native.session.append([['step/end', { turn: 1, step: 1 }], ['step/start', { turn: 1, step: 2 }]])
+    } else native.session.append('step/end', { turn: 1, step: 1 })
     await until(() => names(native).includes('ops_stat'))
     assert.equal(names(ptc).includes('ops_stat'), false)
     assert.equal((await call(native, 'ops_stat', { path: 'hello.txt' })).isError, false)

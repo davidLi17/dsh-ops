@@ -1,5 +1,34 @@
 # davidLi17 maintenance record
 
+## 26.11.12-lhg — retain the running host's scope instance
+
+Base: `e7fa715ef5cb9585a58d2841a8b10df8fe3b0a6d`.
+Evaluated formal upstream releases: v0.5.3 `3f12ef7` and v0.5.4 `77cd34f`.
+Select only v0.5.3 commit `acfc1eb05f9f9511c01b00062e6b89d2be6a75d8`:
+lazily resolve scope helpers from the running host's module tree when a linked
+checkout or a profile-hoisted dependency would otherwise load a second copy.
+Keep an already-correct bare URL to preserve module identity, and do not weaken
+scope checks. The MIT license and all original attribution/notices are preserved.
+
+选择性修复宿主模块重复实例引发的工具注册拒绝；保留 PTC/嵌套工具、Windows 盘符权限、
+schema 优化、现有运行后端及配置。未引入新的 OPS(PTC) 默认预设、批量引导、Niubash
+后端或文件内核变更，未改工作流、权限、依赖或已安装配置。
+
+DSH v0.2.2-rc.2 source `ddac96760b6edf8fa0fe17cbdcf0b512f4c12b2c`
+was reviewed against rc.1. Scope and Native executor implementations are unchanged;
+PTC cancellation/retained state, typed tool denials and working-directory access
+have changed. The rc.2 npm graph was not yet published at this check, so the
+separate rc.2 gate consumes the official source build, including its native addon.
+Admit exactly rc.2 only alongside the previously verified range. The installed-package
+gate exercises the real host and adds batched step publication on rc.2. Keep the
+published rc.1 integration and the locked old-host dependency graph for CI; no
+unpublished npm dependency is added. This is not a claim that a published rc.2
+npm distribution was installed.
+
+Release requires same-commit CI and four newly built native targets, complete
+package provenance/manifest verification and the actual installed-host gate.
+Only existing Actions artifacts are used; no npm or GitHub Release publication.
+
 ## 26.11.11-lhg — classify a disappearing Unix update lock
 
 Base: `61f53eac6f79404866d1691ca156bd32a3155aaf`. Local correctness fix,
